@@ -1,0 +1,54 @@
+{
+    "identity": {
+        "name": "ai-groq",
+        "version": "1.0.0",
+        "description": "Adapter LLM: Groq (Llama 4 / Mixtral). Infraestrutura de ultra-baixa latência.",
+        "ai_role": "Velocista. Conecta-se à LPU (Language Processing Unit) da Groq para gerar commits em milissegundos usando modelos Open Source como Llama 4."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                },
+                "system_instruction": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string",
+                    "default": "meta-llama/llama-4-maverick-17b-128e-instruct"
+                },
+                "max_tokens": {
+                    "type": "integer",
+                    "default": 2048
+                },
+                "temperature": {
+                    "type": "number",
+                    "default": 0.3
+                }
+            },
+            "required": [
+                "prompt"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string"
+                },
+                "tokens_used": {
+                    "type": "integer"
+                },
+                "model_used": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "API_ERR": "Falha na comunicação com a API Groq.",
+        "AUTH_FAIL": "GROQ_API_KEY não encontrada ou inválida."
+    }
+}

@@ -1,0 +1,75 @@
+{
+    "identity": {
+        "name": "ai-brain",
+        "version": "1.0.0",
+        "description": "Orquestrador de IA: constrói prompts, roteia para o provider, valida respostas.",
+        "ai_role": "Cérebro central. Recebe o diff sanitizado, decide qual Persona adotar (via Style Engine) e gera a mensagem de commit final."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "commit_message",
+                        "explain",
+                        "analyze_error"
+                    ]
+                },
+                "diff": {
+                    "type": "string"
+                },
+                "data_ref": {
+                    "type": "string",
+                    "description": "Ref do VibeVault se diff pesado"
+                },
+                "files_changed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "style_rules": {
+                    "type": "object",
+                    "description": "Regras do ai-style"
+                },
+                "hint": {
+                    "type": "string",
+                    "description": "Dica do usuário (-m)"
+                },
+                "provider": {
+                    "type": "string",
+                    "enum": [
+                        "openai",
+                        "gemini",
+                        "ollama"
+                    ],
+                    "default": "openai"
+                }
+            },
+            "required": [
+                "action"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "body": {
+                    "type": "string"
+                },
+                "raw_response": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "PROVIDER_ERR": "Falha na comunicação com o provedor de IA.",
+        "INVALID_RESP": "Resposta da IA não atende ao formato esperado.",
+        "NO_PROVIDER": "Nenhum provedor de IA configurado."
+    }
+}

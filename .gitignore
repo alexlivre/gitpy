@@ -1,0 +1,34 @@
+# Pitão (Python)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.local
+
+# Logs e Saídas de Teste
+*.log
+test_debug_out.txt
+test_int_output.txt
+test_stealth_err.txt
+test_stealth_err_2.txt
+true_test_suite.log
+
+# Específicos do GitPy
+temp_true_test/
+.gitpy-private
+.gitpy-temp/
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+desktop.ini

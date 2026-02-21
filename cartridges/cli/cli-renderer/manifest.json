@@ -1,0 +1,52 @@
+{
+    "identity": {
+        "name": "cli-renderer",
+        "version": "1.0.0",
+        "description": "Interface visual Rich: spinners, painéis, tradução de erros Git.",
+        "ai_role": "Artista do terminal. Responsável por traduzir dados brutos e JSONs em interfaces visuais bonitas, tabelas e animações para o usuário humano."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "status_panel",
+                        "diff_panel",
+                        "spinner",
+                        "confirm",
+                        "error",
+                        "success",
+                        "wizard"
+                    ]
+                },
+                "data": {
+                    "type": "object",
+                    "description": "Dados contextuais para renderização"
+                },
+                "message": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "action"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "rendered": {
+                    "type": "boolean"
+                },
+                "user_input": {
+                    "type": "string",
+                    "description": "Resposta do usuário (confirm/wizard)"
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "RENDER_FAIL": "Falha ao renderizar interface no terminal."
+    }
+}

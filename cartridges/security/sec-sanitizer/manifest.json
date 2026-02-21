@@ -1,0 +1,63 @@
+{
+    "identity": {
+        "name": "sec-sanitizer",
+        "version": "1.0.0",
+        "description": "Muralha de Chumbo: filtra arquivos sensíveis pela Blocklist Imutável.",
+        "ai_role": "Porteiro de segurança. Garante que nenhum arquivo da Blocklist (chaves, senhas, envs) seja lido pelo sistema, independentemente do que o usuário peça."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "file_paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "validate",
+                        "filter_staging"
+                    ],
+                    "default": "validate"
+                }
+            },
+            "required": [
+                "file_paths"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "safe_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "blocked_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "auto_ignored": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Adicionados ao .gitignore"
+                },
+                "violations": {
+                    "type": "integer"
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "SEC_VIOLATION": "Tentativa de acesso a arquivo na Blocklist Imutável.",
+        "GITIGNORE_FAIL": "Falha ao atualizar o .gitignore automaticamente."
+    }
+}

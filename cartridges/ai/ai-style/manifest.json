@@ -1,0 +1,62 @@
+{
+    "identity": {
+        "name": "ai-style",
+        "version": "1.0.0",
+        "description": "Motor de Estilo Adaptativo (The Chameleon): analisa histórico e define estilo.",
+        "ai_role": "Camaleão de estilo. Analisa o histórico de commits anteriores para instruir o Brain a imitar o padrão do time (emojis, conventional commits, idioma)."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {
+                    "type": "string"
+                },
+                "history_depth": {
+                    "type": "integer",
+                    "default": 10
+                }
+            },
+            "required": [
+                "repo_path"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "prefix_style": {
+                    "type": "string",
+                    "enum": [
+                        "conventional",
+                        "freeform"
+                    ]
+                },
+                "uses_emoji": {
+                    "type": "boolean"
+                },
+                "language": {
+                    "type": "string",
+                    "enum": [
+                        "pt-BR",
+                        "en-US",
+                        "auto"
+                    ]
+                },
+                "complexity_tier": {
+                    "type": "string",
+                    "enum": [
+                        "small",
+                        "large"
+                    ]
+                },
+                "prompt_instructions": {
+                    "type": "string",
+                    "description": "Instrução formatada para o LLM"
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "NO_HISTORY": "Repositório sem histórico de commits para análise."
+    }
+}

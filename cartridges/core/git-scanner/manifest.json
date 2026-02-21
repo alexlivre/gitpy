@@ -1,0 +1,36 @@
+{
+  "identity": {
+    "name": "git-scanner",
+    "version": "1.0.0",
+    "description": "Analisa o estado do repositório Git: status, diff, branch, remote.",
+    "ai_role": "Agente responsável por levantar o contexto inicial. Ele descobre se há mudanças, qual a branch atual e se estamos conectados a um remote. Essencial para decidir se há algo a commitar."
+  },
+  "io_contract": {
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "repo_path": { "type": "string", "description": "Caminho absoluto do repositório" },
+        "include_diff": { "type": "boolean", "default": true },
+        "max_diff_chars": { "type": "integer", "default": 4000, "description": "Limite para chunking" }
+      },
+      "required": ["repo_path"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "is_repo": { "type": "boolean" },
+        "branch": { "type": "string" },
+        "has_remote": { "type": "boolean" },
+        "has_changes": { "type": "boolean" },
+        "files_changed": { "type": "array", "items": { "type": "string" } },
+        "diff": { "type": "string", "description": "Diff completo ou data_ref se > 100KB" },
+        "data_ref": { "type": "string", "description": "Referência VibeVault se diff pesado" }
+      }
+    }
+  },
+  "error_dictionary": {
+    "NOT_REPO": "O diretório informado não é um repositório Git.",
+    "GIT_NOT_FOUND": "Binário 'git' não encontrado no PATH do sistema.",
+    "SCAN_FAIL": "Falha ao executar análise de estado do repositório."
+  }
+}

@@ -1,0 +1,8 @@
+typer
+rich
+openai
+google-generativeai
+ollama
+keyring
+groq
+python-dotenv

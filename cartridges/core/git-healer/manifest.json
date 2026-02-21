@@ -1,0 +1,33 @@
+{
+    "identity": {
+        "name": "git-healer",
+        "version": "1.0.0",
+        "description": "Auto-correção: pull --rebase, detecção e tratamento de conflitos.",
+        "ai_role": "Médico do repositório. Entra em ação quando um 'push' falha, tentando estratégias automáticas como 'pull --rebase' ou abortando em caso de conflito manual."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string"},
+                "failed_command": {"type": "string"},
+                "error_output": {"type": "string"},
+                "provider": {"type": "string"},
+                "max_retries": {"type": "integer"}
+            },
+            "required": ["repo_path", "failed_command", "error_output"]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "message": {"type": "string"},
+                "attempts": {"type": "integer"}
+            }
+        }
+    },
+    "error_dictionary": {
+        "CONFLICT": "Conflito de merge detectado — requer intervenção humana.",
+        "HEAL_FAIL": "Falha na tentativa de auto-correção."
+    }
+}

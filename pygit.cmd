@@ -1,0 +1,1 @@
+C:\code\gitpy\app\.venv\Scripts\activate.bat

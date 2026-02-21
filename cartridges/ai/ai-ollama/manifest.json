@@ -1,0 +1,54 @@
+{
+    "identity": {
+        "name": "ai-ollama",
+        "version": "1.0.0",
+        "description": "Adapter LLM: Ollama (Local). Implementa a interface LLMProvider.",
+        "ai_role": "Adaptador de protocolo. Traduz a intenção do Brain para a API local do Ollama, permitindo operação offline e privada."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                },
+                "system_instruction": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string",
+                    "default": "llama3"
+                },
+                "max_tokens": {
+                    "type": "integer",
+                    "default": 2048
+                },
+                "temperature": {
+                    "type": "number",
+                    "default": 0.3
+                }
+            },
+            "required": [
+                "prompt"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string"
+                },
+                "tokens_used": {
+                    "type": "integer"
+                },
+                "model_used": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "API_ERR": "Falha na comunicação com o servidor Ollama (verifique se está rodando).",
+        "MODEL_NOT_FOUND": "Modelo solicitado não foi baixado no Ollama (`ollama pull <model>`)."
+    }
+}

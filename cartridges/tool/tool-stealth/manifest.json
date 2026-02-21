@@ -1,0 +1,7 @@
+{
+    "id": "tool-stealth",
+    "name": "Stealth Mode",
+    "version": "1.0.0",
+    "description": "Hide private files from Git during execution.",
+    "permissions": ["file_system"]
+}

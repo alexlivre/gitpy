@@ -1,0 +1,46 @@
+{
+    "identity": {
+        "name": "sec-redactor",
+        "version": "1.0.0",
+        "description": "Data Masking: detecta e substitui secrets em diffs antes de enviar à IA.",
+        "ai_role": "Censor de dados. Remove padrões de segredos (chaves de API, tokens) de qualquer texto que esteja saindo para uma IA externa."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "description": "Conteúdo a sanitizar (diff)"
+                },
+                "data_ref": {
+                    "type": "string",
+                    "description": "Ref do VibeVault se payload grande"
+                }
+            },
+            "required": [
+                "content"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "sanitized_content": {
+                    "type": "string"
+                },
+                "redacted_count": {
+                    "type": "integer"
+                },
+                "patterns_found": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "REDACT_FAIL": "Falha no processo de sanitização de conteúdo."
+    }
+}

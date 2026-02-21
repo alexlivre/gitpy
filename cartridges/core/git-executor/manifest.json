@@ -1,0 +1,52 @@
+{
+    "identity": {
+        "name": "git-executor",
+        "version": "1.0.0",
+        "description": "Executa comandos Git validados contra uma whitelist de segurança.",
+        "ai_role": "Executor seguro de comandos. Ele recebe a string do comando, valida contra uma lista de permitidos (proibindo 'rm -rf' ou 'push --force') e retorna o resultado."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {
+                    "type": "string"
+                },
+                "command": {
+                    "type": "string",
+                    "description": "Comando Git completo (ex: 'add .', 'commit -m ...')"
+                },
+                "dry_run": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "required": [
+                "repo_path",
+                "command"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "success": {
+                    "type": "boolean"
+                },
+                "stdout": {
+                    "type": "string"
+                },
+                "stderr": {
+                    "type": "string"
+                },
+                "return_code": {
+                    "type": "integer"
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "CMD_BLOCKED": "Comando proibido pela whitelist de segurança.",
+        "EXEC_FAIL": "Falha na execução do comando Git.",
+        "TIMEOUT": "Comando excedeu o tempo limite de execução."
+    }
+}

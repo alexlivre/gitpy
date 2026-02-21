@@ -1,0 +1,65 @@
+{
+    "identity": {
+        "name": "sec-keyring",
+        "version": "1.0.0",
+        "description": "Gestão de tokens via OS Keyring. Jamais salva em texto plano.",
+        "ai_role": "Cofre digital. Interface segura com o Gerenciador de Credenciais do Sistema Operacional para guardar e recuperar tokens de API."
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "get",
+                        "store",
+                        "delete"
+                    ]
+                },
+                "service": {
+                    "type": "string",
+                    "enum": [
+                        "github_token",
+                        "openai_key",
+                        "gemini_key"
+                    ]
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Valor a armazenar (apenas para action=store)"
+                }
+            },
+            "required": [
+                "action",
+                "service"
+            ]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "success": {
+                    "type": "boolean"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Token recuperado (apenas para action=get)"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "env_var",
+                        "gh_cli",
+                        "keyring",
+                        "none"
+                    ]
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "KEYRING_ERR": "Falha ao acessar o cofre de senhas do sistema.",
+        "NOT_FOUND": "Token não encontrado em nenhuma fonte.",
+        "STORE_FAIL": "Falha ao armazenar token no cofre."
+    }
+}
