@@ -68,6 +68,7 @@ def auto(
     ctx: typer.Context,
     wip: bool = typer.Option(False, "--wip", help="Modo Work-In-Progress (ignora verificações de qualidade)."),
     no_push: bool = typer.Option(False, "--no-push", help="Realiza commit local mas não envia ao remoto."),
+    nobuild: bool = typer.Option(False, "--nobuild", help="Adiciona [CI Skip] à mensagem de commit para evitar deploy automático."),
     message: Optional[str] = typer.Option(None, "--message", "-m", help="Dica de contexto para a IA."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simula ações sem executar comandos Git."),
     model: str = typer.Option("auto", "--model", help="Provider de IA (auto, openai, gemini, ollama, groq)."),
@@ -108,7 +109,7 @@ def auto(
     # --- STEALTH MODE END ---
 
     try:
-        _auto_impl(ctx, wip, no_push, message, dry_run, model, yes)
+        _auto_impl(ctx, wip, no_push, nobuild, message, dry_run, model, yes)
     finally:
         # --- STEALTH MODE RESTORE ---
         restore_res = run_async(kernel.run("tool/tool-stealth", {"action": "restore", "repo_path": repo_path}))
@@ -124,6 +125,7 @@ def _auto_impl(
     ctx: typer.Context,
     wip: bool = typer.Option(False, "--wip", help="Modo Work-In-Progress (ignora verificações de qualidade)."),
     no_push: bool = typer.Option(False, "--no-push", help="Realiza commit local mas não envia ao remoto."),
+    nobuild: bool = typer.Option(False, "--nobuild", help="Adiciona [CI Skip] à mensagem de commit para evitar deploy automático."),
     message: Optional[str] = typer.Option(None, "--message", "-m", help="Dica de contexto para a IA."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simula ações sem executar comandos Git."),
     model: str = typer.Option("auto", "--model", help="Provider de IA (auto, openai, gemini, ollama, groq)."),
@@ -251,6 +253,10 @@ def _auto_impl(
         raise typer.Exit(1)
 
     commit_msg = brain_res.get("commit_message")
+    
+    # Adiciona [CI Skip] se --nobuild estiver ativo
+    if nobuild:
+        commit_msg = f"[CI Skip] {commit_msg}"
     
     # Exibe resultado da IA
     console.print(Panel(f"[bold white]{commit_msg}[/bold white]", title="🤖 Generated Commit Message", border_style="purple"))

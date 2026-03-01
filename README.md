@@ -14,6 +14,7 @@ O **GitPy** é uma CLI de próxima geração que transforma seu fluxo de trabalh
 | **🥷 Stealth Mode** | **NOVO!** Oculta arquivos privados (ex: agentes IA) temporariamente durante a execução, sem sujar o `.gitignore`. |
 | **🚑 Git Healer** | Detecta erros de push (conflitos, rejects) e **corrige automaticamente** usando IA. |
 | **🤖 Modo Automático** | `gitpy auto` assume o controle (scan → commit → push) sem perguntas. |
+| **🏗️ Skip Deploy** | **NOVO!** Use `--nobuild` para adicionar `[CI Skip]` e evitar deploys automáticos. |
 | **🛡️ Muralha de Chumbo** | Impede que chaves de API, senhas (`.env`) e arquivos sensíveis sejam commitados. |
 | **📦 Vibe Vault** | Detecta diffs gigantes (>100KB) e os resume automaticamente para a IA funcionar. |
 | **🧹 Smart Ignore** | Verifica proativamente o `.gitignore` antes de cada commit e sugere limpeza. |
@@ -68,6 +69,22 @@ O launcher iniciará o processo de automação inteligente:
 4.  **Act:** Realiza o commit e o push seguro.
 5.  **Restore:** Devolve seus arquivos privados.
 
+### Exemplos de Uso
+
+```bash
+# Modo automático completo
+python launcher.py auto --yes
+
+# Evitar deploy automático (útil para economizar cota de builds)
+python launcher.py auto --yes --nobuild
+
+# Apenas commit local, sem push
+python launcher.py auto --yes --no-push
+
+# Simulação para verificar o que será feito
+python launcher.py auto --dry-run
+```
+
 ### Flags e Opções
 
 | Flag | Atalho | Função |
@@ -75,6 +92,7 @@ O launcher iniciará o processo de automação inteligente:
 | `--yes` | `-y` | **Confirmação Automática:** Aceita tudo sem perguntar. |
 | `--dry-run` | | **Simulação:** Mostra o que seria feito, sem executar Git. |
 | `--no-push` | | **Commit Local:** Faz o commit, mas não envia ao remoto. |
+| `--nobuild` | | **Skip Deploy:** Adiciona `[CI Skip]` à mensagem para evitar deploy automático. **NOVO!** |
 | `--message "..."` | `-m` | **Dica de Contexto:** Orienta a IA (ex: `-m "fix login"`). |
 | `--model <nome>` | | **Escolher IA:** Força `groq`, `openai`, `gemini` ou `ollama`. |
 
@@ -106,6 +124,33 @@ configs_agente_x/*.json
 2. O Git roda "cego", sem ver esses arquivos.
 3. Ao final, o GitPy restaura tudo para o lugar original.
 4. **Segurança:** Se acabar a luz ou der erro, o GitPy restaura na próxima execução. Se houver conflito de nomes, ele salva backup.
+
+---
+
+## 🏗️ Skip Deploy Mode (--nobuild)
+
+**NOVO!** Economize sua cota de builds em serviços como Cloudflare Pages (limite de 500/mês) usando a flag `--nobuild`.
+
+### Como funciona:
+- Quando você usa `--nobuild`, o GitPy automaticamente adiciona `[CI Skip]` ao início da mensagem de commit
+- Isso sinaliza para serviços de CI/CD que eles devem pular o deploy automático deste commit
+- A IA continua gerando a mensagem de commit normalmente, apenas com o prefixo adicional
+
+### Exemplo de uso:
+```bash
+# Faz commit e push normalmente, mas evita deploy automático
+gitpy auto --yes --nobuild
+
+# Combine com outras flags
+gitpy auto --yes --nobuild --no-push  # Commit local apenas
+gitpy auto --yes --nobuild -m "fix: corrige bug crítico"  # Com mensagem customizada
+```
+
+### Mensagem resultante:
+Se a IA gerar `fix: ajusta margem do botão`, com `--nobuild` vira:
+```
+[CI Skip] fix: ajusta margem do botão
+```
 
 ---
 
