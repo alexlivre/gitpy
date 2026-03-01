@@ -67,7 +67,16 @@ def check_is_blocked(file_path: str) -> bool:
             return True
             
         # 2. Match de diretório proibido (ex: .ssh/)
-        if f"/{clean_pattern}" in path_lower or path_lower.startswith(clean_pattern):
+        if f"/{clean_pattern}" in path_lower:
             return True
+            
+        # 3. Match de arquivo no início do caminho com delimitadores
+        # Verifica se começa com o padrão seguido por / ou fim de string
+        if path_lower.startswith(clean_pattern):
+            # Adiciona delimitadores para evitar falsos positivos
+            # Se o padrão for .env, deve ser seguido por / ou fim de string
+            remaining = path_lower[len(clean_pattern):]
+            if not remaining or remaining[0] == "/":
+                return True
             
     return False

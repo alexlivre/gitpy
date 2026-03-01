@@ -32,3 +32,5 @@ temp_true_test/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+*.pyc

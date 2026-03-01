@@ -9,7 +9,6 @@ COMMON_TRASH = [
     "*.log",
     ".DS_Store",
     "node_modules/",
-    "dist/",
     "build/",
     ".vscode/",
     ".idea/",
