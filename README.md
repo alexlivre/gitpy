@@ -13,7 +13,7 @@ O **GitPy** é uma CLI de próxima geração que transforma seu fluxo de trabalh
 | **🧠 Cérebro de IA** | Analisa seus diffs e escreve mensagens de commit semânticas (Conventional Commits). |
 | **🥷 Stealth Mode** | **NOVO!** Oculta arquivos privados (ex: agentes IA) temporariamente durante a execução, sem sujar o `.gitignore`. |
 | **🚑 Git Healer** | Detecta erros de push (conflitos, rejects) e **corrige automaticamente** usando IA. |
-| **🤖 Modo Automático** | `gitpy auto` assume o controle (scan → commit → push) sem perguntas. |
+| **🤖 Modo Automático** | `gitpy auto --yes` assume o controle total (scan → commit → push) sem perguntas. |
 | **🏗️ Skip Deploy** | **NOVO!** Use `--nobuild` para adicionar `[CI Skip]` e evitar deploys automáticos. |
 | **🛡️ Muralha de Chumbo** | Impede que chaves de API, senhas (`.env`) e arquivos sensíveis sejam commitados. |
 | **📦 Vibe Vault** | Detecta diffs gigantes (>100KB) e os resume automaticamente para a IA funcionar. |
@@ -64,11 +64,16 @@ pygit auto
 
 ## 🎮 Guia de Uso: The One Command
 
-O GitPy foi desenhado para ser "Zero Config". Você só precisa de um comando:
+O GitPy foi desenhado para ser "Zero Config". O comando principal é:
 
 ```bash
 python launcher.py auto
 ```
+
+> **Nota:** Por padrão, o GitPy pedirá confirmação antes de realizar o push. Para uma experiência **totalmente autônoma** (sem perguntas), adicione a flag `--yes`:
+> ```bash
+> python launcher.py auto --yes
+> ```
 
 O launcher iniciará o processo de automação inteligente:
 1.  **Stealth Stash:** Esconde seus arquivos privados (`.gitpy-private`).
