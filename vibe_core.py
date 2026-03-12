@@ -7,6 +7,7 @@ import importlib.util
 from datetime import datetime
 import types
 from typing import Callable, Any, Dict, Union
+import json
 
 # --- NOVO RECURSO: O GUARDA-VOLUMES (Vibe Vault) ---
 class VibeVault:
@@ -57,6 +58,7 @@ class VibeKernel:
 
         self.cartridges_dir = os.path.join(project_root, cartridges_base_dir)
         self.cache: Dict[str, Callable] = {} 
+        self.debug_mode: bool = False
         
         # Garante que o namespace base exista para imports relativos funcionarem
         # Garante que o namespace base exista como pacote
@@ -99,6 +101,28 @@ class VibeKernel:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sys.stderr.write(f"[{timestamp}][{level}][{cid}][{cartridge}] {message}\n")
         sys.stderr.flush()
+
+    def trace(self, cid: str, cartridge: str, event: str, data: Any) -> None:
+        """
+        Registra payloads completos em um arquivo de rastreamento local para debug profundo.
+        """
+        if not self.debug_mode:
+            return
+            
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = {
+            "timestamp": timestamp,
+            "cid": cid,
+            "cartridge": cartridge,
+            "event": event,
+            "data": data
+        }
+        
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".vibe-debug.log"), "a", encoding="utf-8") as f:
+                f.write(json.dumps(log_entry, ensure_ascii=False, default=str) + "\n")
+        except Exception as e:
+            self.log("kernel", cid, f"Falha ao gravar trace: {e}", level="ERROR")
 
     def _load_cartridge(self, cartridge_path: str) -> Callable:
         """
@@ -190,6 +214,8 @@ class VibeKernel:
 
             func = self.cache[cartridge_path]
 
+            self.trace(cid, cartridge_path, "PAYLOAD_IN", payload)
+
             # 3. Execução Híbrida (Sync/Async)
             self.log(cartridge_path, cid, "Iniciando execução...")
             start_time = datetime.now()
@@ -203,6 +229,8 @@ class VibeKernel:
 
             duration = (datetime.now() - start_time).total_seconds()
             self.log(cartridge_path, cid, f"Concluído em {duration:.4f}s")
+
+            self.trace(cid, cartridge_path, "RESULT_OUT", result)
 
             # Garante a persistência do rastro
             if isinstance(result, dict):

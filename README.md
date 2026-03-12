@@ -18,6 +18,7 @@ O **GitPy** é uma CLI de próxima geração que transforma seu fluxo de trabalh
 | **🛡️ Muralha de Chumbo** | Impede que chaves de API, senhas (`.env`) e arquivos sensíveis sejam commitados. |
 | **📦 Vibe Vault** | Detecta diffs gigantes (>100KB) e os resume automaticamente para a IA funcionar. |
 | **🧹 Smart Ignore** | Verifica proativamente o `.gitignore` antes de cada commit e sugere limpeza. |
+| **🛠️ Deep Trace** | **NOVO!** Captura payloads e respostas brutas da IA em `.vibe-debug.log` para debug profundo. |
 | **⚙️ Configuração Modular** | **NOVO!** Lista de arquivos ignoráveis editável via `common_trash.json`. |
 | **🎯 Whitelist Inteligente** | **NOVO!** Exceções personalizadas via comentários no `.gitignore`. |
 | **🔒 Segurança .Env** | **NOVO!** Trava de segurança intransponível para proteger `.env`. |
@@ -114,7 +115,7 @@ _(Use estas flags antes ou depois do `auto`)_
 
 | Flag | Atalho | Função |
 | :--- | :--- | :--- |
-| `--debug` | | **Verbose:** Exibe logs técnicos detalhados. |
+| `--debug` | | **Deep Trace:** Ativa rastreamento profundo de payloads em `.vibe-debug.log`. |
 | `--path <dir>` | `-p` | **Alvo:** Roda o GitPy em outro diretório. |
 
 ---
@@ -263,6 +264,30 @@ Se você tentar adicionar `.env` à whitelist (exceções), o GitPy:
 1. Remova o comentário de exceção do `.gitignore`
 2. Adicione `.env` manualmente ao `.gitignore` padrão
 3. **Pense muito bem** se é realmente necessário expor essas informações
+
+---
+
+## 🛠️ Modo Debug Profundo (Deep Trace)
+
+**NOVO!** O GitPy agora inclui um sistema de rastreamento de baixo nível para diagnosticar falhas silenciosas na IA ou problemas de integração.
+
+### Como funciona:
+Quando ativado pela flag `--debug`, o Kernel do GitPy intercepta toda comunicação entre os cartuchos.
+
+1.  **Payload In:** Captura exatamente o que foi enviado para a IA (prompt, diff, parâmetros).
+2.  **Result Out:** Captura a resposta bruta retornada, incluindo códigos de erro técnicos que normalmente seriam omitidos na interface simplificada.
+3.  **Log de Vibe:** Tudo é gravado em formato JSON no arquivo `.vibe-debug.log` na raiz do projeto.
+
+### Exemplo de uso para diagnóstico:
+```bash
+# Se o commit falhar sem mensagem clara, rode com debug:
+python launcher.py --debug auto
+```
+
+### Por que usar?
+- **Erros de IA:** Descubra se o Groq/OpenAI está retornando erros de cota, modelo inexistente ou filtros de segurança.
+- **Auditoria:** Veja exatamente o que está sendo enviado para as LLMs para garantir privacidade.
+- **Desenvolvimento:** Facilita a criação de novos cartuchos monitorando o fluxo de dados.
 
 ---
 

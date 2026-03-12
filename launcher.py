@@ -32,7 +32,7 @@ def run_async(coro):
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
-    debug: bool = typer.Option(False, "--debug", help="Exibe logs detalhados de execução."),
+    debug: bool = typer.Option(False, "--debug", help="Deep Trace: Ativa o rastreamento profundo de payloads e respostas em .vibe-debug.log."),
     path: str = typer.Option(".", "--path", "-p", help="Caminho do repositório alvo.")
 ):
     """
@@ -56,6 +56,7 @@ def main(
 
         console.print("\n[bold]Uso:[/bold] [cyan]gitpy auto[/cyan] — Analisa, gera commit e faz push automaticamente.")
         console.print("\n[bold]Flags úteis:[/bold]")
+        console.print("  [green]--debug[/green]      [bold magenta]Deep Trace Mode:[/bold magenta] Ativa log profundo em .vibe-debug.log")
         console.print("  [green]--dry-run[/green]    Simula sem executar")
         console.print("  [green]--no-push[/green]    Commit local, sem push")
         console.print("  [green]-m 'texto'[/green]   Dica de contexto para a IA")
@@ -72,6 +73,7 @@ def auto(
     message: Optional[str] = typer.Option(None, "--message", "-m", help="Dica de contexto para a IA."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simula ações sem executar comandos Git."),
     model: str = typer.Option("auto", "--model", help="Provider de IA (auto, openai, gemini, ollama, groq)."),
+    debug: bool = typer.Option(False, "--debug", help="Deep Trace: Ativa log profundo em .vibe-debug.log."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirma automaticamente todas as perguntas.")
 ):
     """
@@ -109,7 +111,7 @@ def auto(
     # --- STEALTH MODE END ---
 
     try:
-        _auto_impl(ctx, wip, no_push, nobuild, message, dry_run, model, yes)
+        _auto_impl(ctx, wip, no_push, nobuild, message, dry_run, model, debug, yes)
     finally:
         # --- STEALTH MODE RESTORE ---
         restore_res = run_async(kernel.run("tool/tool-stealth", {"action": "restore", "repo_path": repo_path}))
@@ -129,6 +131,7 @@ def _auto_impl(
     message: Optional[str] = typer.Option(None, "--message", "-m", help="Dica de contexto para a IA."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simula ações sem executar comandos Git."),
     model: str = typer.Option("auto", "--model", help="Provider de IA (auto, openai, gemini, ollama, groq)."),
+    debug: bool = typer.Option(False, "--debug", help="Deep Trace: Ativa log profundo em .vibe-debug.log."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirma automaticamente todas as perguntas.")
 ):
     """
@@ -136,9 +139,15 @@ def _auto_impl(
     """
     console = Console()
     
-    # Recupera globais do contexto
+    # Recupera globais do contexto ou da chamada direta do auto
     repo_path = ctx.obj.get("path", ".")
-    debug = ctx.obj.get("debug", False)
+    global_debug = ctx.obj.get("debug", False)
+    
+    # Prevalesce a flag --debug se ela vier localmente no subcomando
+    kernel_debug = debug or global_debug
+    
+    # Pluga o modo debug no kernel (novo rastreador deep trace)
+    kernel.debug_mode = kernel_debug
 
     # 0. Auto-Mode (Se chamado via 'auto', já estamos no modo implícito, mas checamos --yes)
     # A lógica original de sys.argv==1 não é mais necessária aqui pois 'auto' é explícito,

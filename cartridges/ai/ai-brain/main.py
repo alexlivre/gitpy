@@ -69,6 +69,13 @@ Regras:
             "system_instruction": system_prompt
         })
         
+        if llm_res.get("error"):
+            return {
+                "success": False, 
+                "error": llm_res.get("error"), 
+                "message": llm_res.get("message", "Falha de comunicação ou contexto reportado pelo provedor de API.")
+            }
+        
         raw_text = llm_res.get("text", "").strip()
         
         # Parsing de Exclusão e Remoção
