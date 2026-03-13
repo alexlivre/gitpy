@@ -9,7 +9,7 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     prompt = payload.get("prompt")
     system_inst = payload.get("system_instruction", "You are a helpful assistant.")
-    model = payload.get("model", "meta-llama/llama-4-scout-17b-16e-instruct")
+    model = payload.get("model") or os.getenv("GROQ_MODEL") or "meta-llama/llama-4-scout-17b-16e-instruct"
     max_tokens = payload.get("max_tokens", 2048)
     temperature = payload.get("temperature", 0.3)
     

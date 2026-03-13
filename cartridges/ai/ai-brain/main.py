@@ -1,5 +1,6 @@
 from vibe_core import kernel
 import asyncio
+import os
 from typing import Dict, Any
 
 async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -60,13 +61,21 @@ Regras:
     if hint:
         user_prompt += f"\nDica do desenvolvedor: '{hint}'"
 
-    # 5. Invocação do LLM (Adapter)
+    # 5. Resolução de Modelo (Hierarquia: Payload > Global ENV > Provider ENV)
+    # Se 'model' não veio no payload (ex: via flag), tenta buscar no ambiente
+    target_model = payload.get("model") 
+    if not target_model:
+        # Tenta modelo global ou modelo específico do provedor
+        target_model = os.getenv("AI_MODEL") or os.getenv(f"{provider.upper()}_MODEL")
+
+    # 6. Invocação do LLM (Adapter)
     adapter_name = f"ai/ai-{provider}" # ai/ai-openai, ai/ai-gemini...
     
     try:
         llm_res = await kernel.run(adapter_name, {
             "prompt": user_prompt,
-            "system_instruction": system_prompt
+            "system_instruction": system_prompt,
+            "model": target_model
         })
         
         if llm_res.get("error"):

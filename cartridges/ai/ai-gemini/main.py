@@ -8,7 +8,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     prompt = payload.get("prompt")
     system_inst = payload.get("system_instruction")
-    model_name = payload.get("model", "gemini-pro")
+    model_name = payload.get("model") or os.getenv("GEMINI_MODEL") or "gemini-pro"
     
     # Configura API Key
     api_key = os.getenv("GEMINI_API_KEY")

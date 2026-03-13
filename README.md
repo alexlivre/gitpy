@@ -40,14 +40,21 @@ pip install -r requirements.txt
 ```
 
 ### 2. Configure a IA (.env)
-Atualmente, o GitPy requer uma chave de API do **Groq**. Outros provedores (OpenAI, Gemini, Ollama) ainda não foram implementados e serão adicionados em versões futuras.
+O GitPy suporta múltiplos provedores e permite configurar o modelo padrão via `.env`.
 
-1. Obtenha sua chave gratuita em: **[https://console.groq.com/keys](https://console.groq.com/keys)**
-2. Crie um arquivo `.env` na pasta raiz do projeto (use o `.env.example` como base):
+1. Crie um arquivo `.env` na pasta raiz do projeto (use o `.env.example` como base):
+2. Defina seu provedor e chaves:
 
 ```ini
-GROQ_API_KEY=gsk_...     # OBRIGATÓRIO (Único provedor suportado atualmente)
-# OPENAI_API_KEY=...     # Em breve
+# Provedor Padrão (auto, groq, openai, gemini)
+AI_PROVIDER=groq
+
+# Modelo Específico (Opcional)
+GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+
+# Chaves de API
+GROQ_API_KEY=gsk_...
+OPENAI_API_KEY=sk-...
 ```
 
 ### 3. Rodando o GitPy
@@ -108,7 +115,7 @@ python launcher.py auto --dry-run
 | `--no-push` | | **Commit Local:** Faz o commit, mas não envia ao remoto. |
 | `--nobuild` | | **Skip Deploy:** Adiciona `[CI Skip]` à mensagem para evitar deploy automático. **NOVO!** |
 | `--message "..."` | `-m` | **Dica de Contexto:** Orienta a IA (ex: `-m "fix login"`). |
-| `--model <nome>` | | **Escolher IA:** Atualmente suporta apenas `groq`. Outros (openai, gemini, ollama) em breve. |
+| `--model <nome>` | | **Escolher Provedor:** Seleciona a IA (groq, openai, gemini, ollama). Sobrescreve o `AI_PROVIDER` do `.env`. |
 
 ### 🌍 Opções Globais
 _(Use estas flags antes ou depois do `auto`)_

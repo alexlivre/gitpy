@@ -8,7 +8,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     prompt = payload.get("prompt")
     system_inst = payload.get("system_instruction", "You are a helpful assistant.")
-    model = payload.get("model", "gpt-4o-mini")
+    model = payload.get("model") or os.getenv("OPENAI_MODEL") or "gpt-4o-mini"
     max_tokens = payload.get("max_tokens", 500)
     temperature = payload.get("temperature", 0.3)
     

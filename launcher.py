@@ -72,7 +72,7 @@ def auto(
     nobuild: bool = typer.Option(False, "--nobuild", help="Adiciona [CI Skip] à mensagem de commit para evitar deploy automático."),
     message: Optional[str] = typer.Option(None, "--message", "-m", help="Dica de contexto para a IA."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simula ações sem executar comandos Git."),
-    model: str = typer.Option("auto", "--model", help="Provider de IA (auto, openai, gemini, ollama, groq)."),
+    model: str = typer.Option(os.getenv("AI_PROVIDER", "auto"), "--model", help="Provider de IA (auto, openai, gemini, ollama, groq)."),
     debug: bool = typer.Option(False, "--debug", help="Deep Trace: Ativa log profundo em .vibe-debug.log."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirma automaticamente todas as perguntas.")
 ):
@@ -130,7 +130,7 @@ def _auto_impl(
     nobuild: bool = typer.Option(False, "--nobuild", help="Adiciona [CI Skip] à mensagem de commit para evitar deploy automático."),
     message: Optional[str] = typer.Option(None, "--message", "-m", help="Dica de contexto para a IA."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simula ações sem executar comandos Git."),
-    model: str = typer.Option("auto", "--model", help="Provider de IA (auto, openai, gemini, ollama, groq)."),
+    model: str = typer.Option(os.getenv("AI_PROVIDER", "auto"), "--model", help="Provider de IA (auto, openai, gemini, ollama, groq)."),
     debug: bool = typer.Option(False, "--debug", help="Deep Trace: Ativa log profundo em .vibe-debug.log."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirma automaticamente todas as perguntas.")
 ):
