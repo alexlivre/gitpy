@@ -1,7 +1,11 @@
-from vibe_core import kernel
-import asyncio
+"""
+Central module for ai-brain functionality.
+"""
 import os
-from typing import Dict, Any
+from typing import Any, Dict
+
+from vibe_core import kernel
+
 
 async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -12,8 +16,8 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     diff = payload.get("diff", "")
     repo_path = payload.get("repo_path")
     provider = payload.get("provider", "openai")
-    hint = payload.get("hint") # Dica do usuário (-m)
-    
+    hint = payload.get("hint")  # Dica do usuário (-m)
+
     if not diff and not hint:
         return {"error": "NO_CONTEXT", "message": "Sem diff ou dica para trabalhar."}
 
@@ -23,9 +27,10 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         redact_res = await kernel.run("security/sec-redactor", {"content": diff})
         safe_diff = redact_res.get("sanitized_content", "")
     except Exception as e:
-        safe_diff = diff # Fallback (arriscado, mas melhor que crashar? Não, melhor avisar)
+        # Fallback (arriscado, mas melhor que crashar? Não, melhor avisar)
+        safe_diff = diff
         # Na V2, falhar se redactor morrer.
-        
+
     # 3. Contexto: Estilo (Style)
     try:
         style_res = await kernel.run("ai/ai-style", {"repo_path": repo_path})
@@ -33,7 +38,7 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     except:
         style_guide = ""
 
-    project_instructions = "" # Deprecated
+    project_instructions = ""  # Deprecated
 
     # 4. Construção do Prompt
     system_prompt = f"""Você é um Assistente DevOps Sênior.
@@ -63,48 +68,50 @@ Regras:
 
     # 5. Resolução de Modelo (Hierarquia: Payload > Global ENV > Provider ENV)
     # Se 'model' não veio no payload (ex: via flag), tenta buscar no ambiente
-    target_model = payload.get("model") 
+    target_model = payload.get("model")
     if not target_model:
         # Tenta modelo global ou modelo específico do provedor
-        target_model = os.getenv("AI_MODEL") or os.getenv(f"{provider.upper()}_MODEL")
+        target_model = os.getenv("AI_MODEL") or os.getenv(
+            f"{provider.upper()}_MODEL")
 
     # 6. Invocação do LLM (Adapter)
-    adapter_name = f"ai/ai-{provider}" # ai/ai-openai, ai/ai-gemini...
-    
+    adapter_name = f"ai/ai-{provider}"  # ai/ai-openai, ai/ai-gemini...
+
     try:
         llm_res = await kernel.run(adapter_name, {
             "prompt": user_prompt,
             "system_instruction": system_prompt,
             "model": target_model
         })
-        
+
         if llm_res.get("error"):
             return {
-                "success": False, 
-                "error": llm_res.get("error"), 
+                "success": False,
+                "error": llm_res.get("error"),
                 "message": llm_res.get("message", "Falha de comunicação ou contexto reportado pelo provedor de API.")
             }
-        
+
         raw_text = llm_res.get("text", "").strip()
-        
+
         # Parsing de Exclusão e Remoção
         excluded_files = []
         removed_files = []
         commit_msg_lines = []
-        
+
         for line in raw_text.splitlines():
-             commit_msg_lines.append(line)
-        
+            commit_msg_lines.append(line)
+
         generated_msg = "\n".join(commit_msg_lines).strip()
-        
+
         # Limpeza básica pós-IA
-        generated_msg = generated_msg.replace("```", "").replace("commit:", "").strip()
-        
+        generated_msg = generated_msg.replace(
+            "```", "").replace("commit:", "").strip()
+
         return {
             "success": True,
             "commit_message": generated_msg,
-            "excluded_files": [], # Deprecated
-            "removed_files": [], # Deprecated
+            "excluded_files": [],  # Deprecated
+            "removed_files": [],  # Deprecated
             "provider_used": provider,
             "redacted": redact_res.get("redacted_count", 0) > 0
         }

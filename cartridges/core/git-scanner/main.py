@@ -1,7 +1,12 @@
-import subprocess
+"""
+Central module for git-scanner functionality.
+"""
 import os
-from typing import Dict, Any
+import subprocess
+from typing import Any, Dict
+
 from .dlc import smart_pack_diff
+
 
 def run_git_cmd(args: list, cwd: str) -> str:
     """Helper para executar comandos git de leitura."""
@@ -17,12 +22,13 @@ def run_git_cmd(args: list, cwd: str) -> str:
         raise Exception(result.stderr.strip())
     return result.stdout.strip()
 
+
 def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Analisa o estado do repositório Git.
     """
     repo_path = payload.get("repo_path")
-    max_diff = payload.get("max_diff_chars", 100000) # 100KB default
+    max_diff = payload.get("max_diff_chars", 100000)  # 100KB default
     cid = payload.get("cid", "unknown")
 
     if not repo_path or not os.path.isdir(repo_path):
@@ -49,11 +55,12 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         # --porcelain garante formato estável para scripts
         status = run_git_cmd(["status", "--porcelain"], repo_path)
         has_changes = bool(status)
-        
+
         files_changed = []
         if has_changes:
             # Lista simples de arquivos modificados
-            files_changed = [line.strip().split()[-1] for line in status.splitlines()]
+            files_changed = [line.strip().split()[-1]
+                             for line in status.splitlines()]
 
         # 4. Captura Diff (Se houver mudanças e solicitado)
         diff_data = {"mode": "none"}
@@ -78,7 +85,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
                     full_diff = run_git_cmd(["diff", "--cached"], repo_path)
                 except:
                     full_diff = run_git_cmd(["diff"], repo_path)
-            
+
             diff_data = smart_pack_diff(full_diff, max_chars=max_diff)
 
         return {
@@ -92,7 +99,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     except Exception as e:
         return {
-            "is_repo": True, 
-            "error": "SCAN_FAIL", 
+            "is_repo": True,
+            "error": "SCAN_FAIL",
             "message": str(e)
         }

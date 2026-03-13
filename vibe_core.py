@@ -1,15 +1,20 @@
+"""
+Central module for Vibe Core Base functionality.
+"""
+import asyncio
+import importlib.util
+import inspect
+import json
 import os
 import sys
-import uuid
-import asyncio
-import inspect
-import importlib.util
-from datetime import datetime
 import types
-from typing import Callable, Any, Dict, Union
-import json
+import uuid
+from datetime import datetime
+from typing import Any, Callable, Dict
 
 # --- NOVO RECURSO: O GUARDA-VOLUMES (Vibe Vault) ---
+
+
 class VibeVault:
     """
     Sistema de armazenamento em memória para evitar serialização de objetos pesados.
@@ -36,6 +41,7 @@ class VibeVault:
             del cls._storage[ref_id]
 # ---------------------------------------------------
 
+
 class VibeKernel:
     """
     Motor de Execução Híbrido (Async/Sync) do Vibe Engineering.
@@ -57,9 +63,9 @@ class VibeKernel:
         project_root = os.path.dirname(os.path.abspath(__file__))
 
         self.cartridges_dir = os.path.join(project_root, cartridges_base_dir)
-        self.cache: Dict[str, Callable] = {} 
+        self.cache: Dict[str, Callable] = {}
         self.debug_mode: bool = False
-        
+
         # Garante que o namespace base exista para imports relativos funcionarem
         # Garante que o namespace base exista como pacote
         if "vibe_cartridges" not in sys.modules:
@@ -72,12 +78,12 @@ class VibeKernel:
         parts = module_name.split('.')
         # parts[0] é 'vibe_cartridges'
         current = parts[0]
-        for part in parts[1:-1]: # Pula o último (que é o módulo)
+        for part in parts[1:-1]:  # Pula o último (que é o módulo)
             current = f"{current}.{part}"
             if current not in sys.modules:
                 m = types.ModuleType(current)
-                m.__path__ = [] # Marca como pacote
-                sys.modules[current] = m 
+                m.__path__ = []  # Marca como pacote
+                sys.modules[current] = m
 
     def _generate_cid(self) -> str:
         """
@@ -99,7 +105,8 @@ class VibeKernel:
             level (str): Nível de severidade (INFO, ERROR, WARN).
         """
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        sys.stderr.write(f"[{timestamp}][{level}][{cid}][{cartridge}] {message}\n")
+        sys.stderr.write(
+            f"[{timestamp}][{level}][{cid}][{cartridge}] {message}\n")
         sys.stderr.flush()
 
     def trace(self, cid: str, cartridge: str, event: str, data: Any) -> None:
@@ -108,7 +115,7 @@ class VibeKernel:
         """
         if not self.debug_mode:
             return
-            
+
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_entry = {
             "timestamp": timestamp,
@@ -117,12 +124,14 @@ class VibeKernel:
             "event": event,
             "data": data
         }
-        
+
         try:
             with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".vibe-debug.log"), "a", encoding="utf-8") as f:
-                f.write(json.dumps(log_entry, ensure_ascii=False, default=str) + "\n")
+                f.write(json.dumps(
+                    log_entry, ensure_ascii=False, default=str) + "\n")
         except Exception as e:
-            self.log("kernel", cid, f"Falha ao gravar trace: {e}", level="ERROR")
+            self.log("kernel", cid,
+                     f"Falha ao gravar trace: {e}", level="ERROR")
 
     def _load_cartridge(self, cartridge_path: str) -> Callable:
         """
@@ -138,11 +147,13 @@ class VibeKernel:
             FileNotFoundError: Se o main.py não existir.
             AttributeError: Se a função 'process' não for encontrada.
         """
-        full_path = os.path.join(self.cartridges_dir, cartridge_path, "main.py")
+        full_path = os.path.join(
+            self.cartridges_dir, cartridge_path, "main.py")
 
         if not os.path.exists(full_path):
-            raise FileNotFoundError(f"Arquivo main.py não encontrado em: {full_path}")
-            
+            raise FileNotFoundError(
+                f"Arquivo main.py não encontrado em: {full_path}")
+
         # Adiciona o diretório do cartucho ao sys.path para permitir imports locais (ex: import dlc)
         cartridge_dir = os.path.dirname(full_path)
         if cartridge_dir not in sys.path:
@@ -151,13 +162,13 @@ class VibeKernel:
         # Cria um namespace isolado para evitar colisão de nomes
         # Cria um namespace isolado para evitar colisão de nomes
         sanitized_check = cartridge_path.replace('/', '.').replace('\\', '.')
-        
+
         # O cartucho vira um pacote (ex: vibe_cartridges.core.git_scanner)
         package_name = f"vibe_cartridges.{sanitized_check}"
-        
+
         # Garante que a estrutura de pacotes exista até o cartucho
         self._ensure_package_structure(package_name)
-        
+
         # Configura o pacote do cartucho com o caminho físico (permite imports relativos no main)
         if package_name not in sys.modules:
             m = types.ModuleType(package_name)
@@ -165,21 +176,24 @@ class VibeKernel:
             sys.modules[package_name] = m
         else:
             # Se já existe (dummy), atualiza o path para real
-             sys.modules[package_name].__path__ = [os.path.dirname(full_path)]
+            sys.modules[package_name].__path__ = [os.path.dirname(full_path)]
 
         # O main vira um submódulo (ex: vibe_cartridges.core.git_scanner.main)
         module_name = f"{package_name}.main"
 
         spec = importlib.util.spec_from_file_location(module_name, full_path)
         if spec is None or spec.loader is None:
-            raise ImportError(f"Falha na especificação do módulo: {module_name}")
+            raise ImportError(
+                f"Falha na especificação do módulo: {module_name}")
 
         module = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = module # Registro necessário para imports relativos
+        # Registro necessário para imports relativos
+        sys.modules[module_name] = module
         spec.loader.exec_module(module)
 
         if not hasattr(module, "process"):
-            raise AttributeError(f"O cartucho '{cartridge_path}' viola o contrato: 'process' ausente.")
+            raise AttributeError(
+                f"O cartucho '{cartridge_path}' viola o contrato: 'process' ausente.")
 
         return module.process
 
@@ -199,7 +213,7 @@ class VibeKernel:
         Returns:
             dict: Resultado do processamento ou dicionário de erro.
         """
-        if payload is None: 
+        if payload is None:
             payload = {}
 
         # 1. Injeção de Contexto (CID)
@@ -210,7 +224,8 @@ class VibeKernel:
             # 2. Dynamic Loading (ou recuperação do Cache)
             if cartridge_path not in self.cache:
                 self.log(cartridge_path, cid, "Carregando módulo...")
-                self.cache[cartridge_path] = self._load_cartridge(cartridge_path)
+                self.cache[cartridge_path] = self._load_cartridge(
+                    cartridge_path)
 
             func = self.cache[cartridge_path]
 
@@ -242,16 +257,18 @@ class VibeKernel:
             error_msg = f"TIMEOUT: Execução excedeu o limite de {timeout}s"
             self.log(cartridge_path, cid, error_msg, level="ERROR")
             return {
-                "status": "error", "code": "TIMEOUT", 
+                "status": "error", "code": "TIMEOUT",
                 "message": error_msg, "cid": cid
             }
 
         except Exception as e:
-            self.log(cartridge_path, cid, f"FALHA FATAL: {str(e)}", level="ERROR")
+            self.log(cartridge_path, cid,
+                     f"FALHA FATAL: {str(e)}", level="ERROR")
             return {
                 "status": "error", "code": "INTERNAL_FAILURE",
                 "module": cartridge_path, "message": str(e), "cid": cid
             }
+
 
 # Singleton Global
 kernel = VibeKernel()

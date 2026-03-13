@@ -1,6 +1,8 @@
 
 import unittest
+
 from cartridges.security.sec_redactor.main import process
+
 
 class TestSecRedactor(unittest.TestCase):
 
@@ -26,6 +28,7 @@ class TestSecRedactor(unittest.TestCase):
         result = process({"content": text})
         self.assertEqual(result["sanitized_content"], text)
         self.assertEqual(result["redacted_count"], 0)
+
 
 if __name__ == '__main__':
     unittest.main()

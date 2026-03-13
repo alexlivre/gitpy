@@ -1,5 +1,10 @@
+"""
+Central module for ai-ollama functionality.
+"""
+from typing import Any, Dict
+
 import requests
-from typing import Dict, Any
+
 
 def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -9,9 +14,9 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     prompt = payload.get("prompt")
     system_inst = payload.get("system_instruction", "")
     model = payload.get("model", "llama3")
-    
+
     url = "http://localhost:11434/api/generate"
-    
+
     final_prompt = f"{system_inst}\n\n{prompt}" if system_inst else prompt
 
     data = {
@@ -24,9 +29,9 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         response = requests.post(url, json=data)
         if response.status_code != 200:
             return {"error": "API_ERR", "message": f"Ollama Error: {response.text}"}
-            
+
         json_resp = response.json()
-        
+
         return {
             "text": json_resp.get("response", ""),
             "tokens_used": json_resp.get("eval_count", 0),

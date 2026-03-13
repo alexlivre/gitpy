@@ -1,5 +1,9 @@
+"""
+Central module for ai-style functionality.
+"""
 import subprocess
-from typing import Dict, Any
+from typing import Any, Dict
+
 
 def analyze_history(repo_path: str, depth: int = 10) -> str:
     """
@@ -22,37 +26,39 @@ def analyze_history(repo_path: str, depth: int = 10) -> str:
         return ""
 
     # Heurísticas Simples
-    has_conventional = any(c.startswith(("feat:", "fix:", "chore:", "docs:")) for c in commits)
-    has_emoji = any(ord(c[0]) > 10000 for c in commits if c) # Check bobo de emoji no começo
+    has_conventional = any(c.startswith(
+        ("feat:", "fix:", "chore:", "docs:")) for c in commits)
+    # Check bobo de emoji no começo
+    has_emoji = any(ord(c[0]) > 10000 for c in commits if c)
 
     style_guide = "ESTILO DO PROJETO DETECTADO:\n"
     if has_conventional:
         style_guide += "- USE Conventional Commits (ex: 'feat: ...', 'fix: ...').\n"
     else:
         style_guide += "- USE estilo livre (Freeform).\n"
-    
+
     if has_emoji:
         style_guide += "- USE Emojis no início (gitmoji padrão).\n"
     else:
         style_guide += "- NÃO use emojis.\n"
-        
+
     style_guide += "- Mantenha a consistência com os commits anteriores.\n"
-    
+
     return style_guide
+
 
 def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Style Engine.
     """
     repo_path = payload.get("repo_path")
-    
+
     if not repo_path:
         return {"error": "REPO_PATH_MISSING"}
 
     instructions = analyze_history(repo_path)
-    
+
     return {
         "style_instructions": instructions or "Adote um estilo padrão profissional (Conventional Commits).",
         "detected": bool(instructions)
     }
-

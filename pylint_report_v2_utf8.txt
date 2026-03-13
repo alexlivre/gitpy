@@ -1,0 +1,422 @@
+﻿************* Module launcher
+launcher.py:67:0: C0301: Line too long (128/120) (line-too-long)
+launcher.py:385:0: C0301: Line too long (144/120) (line-too-long)
+launcher.py:388:0: C0301: Line too long (133/120) (line-too-long)
+launcher.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+launcher.py:13:0: C0413: Import "from dotenv import load_dotenv" should be placed at the top of the module (wrong-import-position)
+launcher.py:14:0: C0413: Import "from rich import box" should be placed at the top of the module (wrong-import-position)
+launcher.py:15:0: C0413: Import "from rich.console import Console" should be placed at the top of the module (wrong-import-position)
+launcher.py:16:0: C0413: Import "from rich.panel import Panel" should be placed at the top of the module (wrong-import-position)
+launcher.py:18:0: C0413: Import "from vibe_core import kernel" should be placed at the top of the module (wrong-import-position)
+launcher.py:81:0: R0913: Too many arguments (9/5) (too-many-arguments)
+launcher.py:113:11: W0718: Catching too general exception Exception (broad-exception-caught)
+launcher.py:146:16: W1309: Using an f-string that does not have any interpolated variables (f-string-without-interpolation)
+launcher.py:154:0: R0913: Too many arguments (9/5) (too-many-arguments)
+launcher.py:154:0: R0914: Too many local variables (34/15) (too-many-locals)
+launcher.py:154:0: R0912: Too many branches (28/12) (too-many-branches)
+launcher.py:154:0: R0915: Too many statements (90/50) (too-many-statements)
+launcher.py:156:4: W0613: Unused argument 'wip' (unused-argument)
+************* Module vibe_core
+vibe_core.py:126:0: C0301: Line too long (127/120) (line-too-long)
+vibe_core.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+vibe_core.py:129:15: W0718: Catching too general exception Exception (broad-exception-caught)
+vibe_core.py:261:15: W0718: Catching too general exception Exception (broad-exception-caught)
+************* Module cartridges.ai.ai-brain.main
+cartridges\ai\ai-brain\main.py:53:0: C0301: Line too long (169/120) (line-too-long)
+cartridges\ai\ai-brain\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\ai\ai-brain\main.py:7:0: R0914: Too many local variables (23/15) (too-many-locals)
+cartridges\ai\ai-brain\main.py:26:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\ai\ai-brain\main.py:35:4: W0702: No exception type(s) specified (bare-except)
+cartridges\ai\ai-brain\main.py:116:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\ai\ai-brain\main.py:26:4: W0612: Unused variable 'e' (unused-variable)
+cartridges\ai\ai-brain\main.py:38:4: W0612: Unused variable 'project_instructions' (unused-variable)
+cartridges\ai\ai-brain\main.py:94:8: W0612: Unused variable 'excluded_files' (unused-variable)
+cartridges\ai\ai-brain\main.py:95:8: W0612: Unused variable 'removed_files' (unused-variable)
+************* Module cartridges.ai.ai-gemini.main
+cartridges\ai\ai-gemini\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\ai\ai-gemini\main.py:40:11: W0718: Catching too general exception Exception (broad-exception-caught)
+************* Module cartridges.ai.ai-groq.main
+cartridges\ai\ai-groq\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\ai\ai-groq\main.py:28:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\ai\ai-groq\main.py:56:11: W0718: Catching too general exception Exception (broad-exception-caught)
+************* Module cartridges.ai.ai-ollama.main
+cartridges\ai\ai-ollama\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\ai\ai-ollama\main.py:40:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\ai\ai-ollama\main.py:26:19: W3101: Missing timeout argument for method 'requests.post' can cause your program to hang indefinitely (missing-timeout)
+************* Module cartridges.ai.ai-openai.main
+cartridges\ai\ai-openai\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\ai\ai-openai\main.py:46:11: W0718: Catching too general exception Exception (broad-exception-caught)
+************* Module cartridges.ai.ai-style.main
+cartridges\ai\ai-style\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\ai\ai-style\main.py:19:4: W0702: No exception type(s) specified (bare-except)
+cartridges\ai\ai-style\main.py:10:17: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+************* Module cartridges.cli.cli-renderer.main
+cartridges\cli\cli-renderer\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\cli\cli-renderer\main.py:18:0: C0116: Missing function or method docstring (missing-function-docstring)
+cartridges\cli\cli-renderer\main.py:22:0: C0116: Missing function or method docstring (missing-function-docstring)
+cartridges\cli\cli-renderer\main.py:35:4: R1705: Unnecessary "elif" after "return", remove the leading "el" from "elif" (no-else-return)
+************* Module cartridges.core.git-executor.main
+cartridges\core\git-executor\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\core\git-executor\main.py:42:8: W1203: Use lazy % formatting in logging functions (logging-fstring-interpolation)
+cartridges\core\git-executor\main.py:57:12: W1203: Use lazy % formatting in logging functions (logging-fstring-interpolation)
+cartridges\core\git-executor\main.py:130:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\core\git-executor\main.py:111:17: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+cartridges\core\git-executor\main.py:77:4: W0612: Unused variable 'cid' (unused-variable)
+************* Module cartridges.core.git-healer.main
+cartridges\core\git-healer\main.py:129:0: C0301: Line too long (136/120) (line-too-long)
+cartridges\core\git-healer\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\core\git-healer\main.py:6:0: R0914: Too many local variables (23/15) (too-many-locals)
+cartridges\core\git-healer\main.py:76:15: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\core\git-healer\main.py:101:12: R1723: Unnecessary "else" after "break", remove the "else" and de-indent the code inside it (no-else-break)
+cartridges\core\git-healer\main.py:128:12: R1705: Unnecessary "else" after "return", remove the "else" and de-indent the code inside it (no-else-return)
+cartridges\core\git-healer\main.py:133:20: W1309: Using an f-string that does not have any interpolated variables (f-string-without-interpolation)
+cartridges\core\git-healer\main.py:6:0: R0912: Too many branches (13/12) (too-many-branches)
+cartridges\core\git-healer\main.py:6:0: R0915: Too many statements (51/50) (too-many-statements)
+cartridges\core\git-healer\main.py:88:8: W0612: Unused variable 'last_cmd_output' (unused-variable)
+************* Module cartridges.core.git-scanner.dlc
+cartridges\core\git-scanner\dlc.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\core\git-scanner\dlc.py:16:4: R1705: Unnecessary "else" after "return", remove the "else" and de-indent the code inside it (no-else-return)
+************* Module cartridges.core.git-scanner.main
+cartridges\core\git-scanner\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\core\git-scanner\main.py:10:13: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+cartridges\core\git-scanner\main.py:19:8: W0719: Raising too general exception: Exception (broad-exception-raised)
+cartridges\core\git-scanner\main.py:97:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\core\git-scanner\main.py:72:12: W0702: No exception type(s) specified (bare-except)
+cartridges\core\git-scanner\main.py:68:16: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+cartridges\core\git-scanner\main.py:79:12: W0702: No exception type(s) specified (bare-except)
+cartridges\core\git-scanner\main.py:83:16: W0702: No exception type(s) specified (bare-except)
+cartridges\core\git-scanner\main.py:29:4: W0612: Unused variable 'cid' (unused-variable)
+************* Module cartridges.security.sec-keyring.main
+cartridges\security\sec-keyring\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\security\sec-keyring\main.py:51:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\security\sec-keyring\main.py:24:8: R1705: Unnecessary "elif" after "return", remove the leading "el" from "elif" (no-else-return)
+cartridges\security\sec-keyring\main.py:9:0: R0911: Too many return statements (9/6) (too-many-return-statements)
+cartridges\security\sec-keyring\main.py:9:0: R1710: Either all return statements in a function should return an expression, or none of them should. (inconsistent-return-statements)
+cartridges\security\sec-keyring\main.py:18:4: W0612: Unused variable 'cid' (unused-variable)
+************* Module cartridges.security.sec-redactor.main
+cartridges\security\sec-redactor\main.py:13:0: C0301: Line too long (183/120) (line-too-long)
+cartridges\security\sec-redactor\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\security\sec-redactor\main.py:20:0: C0116: Missing function or method docstring (missing-function-docstring)
+cartridges\security\sec-redactor\main.py:38:22: R1718: Consider using a set comprehension (consider-using-set-comprehension)
+cartridges\security\sec-redactor\main.py:48:4: W0612: Unused variable 'cid' (unused-variable)
+************* Module cartridges.security.sec-sanitizer.dlc
+cartridges\security\sec-sanitizer\dlc.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+************* Module cartridges.security.sec-sanitizer.main
+cartridges\security\sec-sanitizer\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\security\sec-sanitizer\main.py:13:4: W0612: Unused variable 'cid' (unused-variable)
+************* Module cartridges.tool.tool-ignore.main
+cartridges\tool\tool-ignore\main.py:75:0: C0301: Line too long (138/120) (line-too-long)
+cartridges\tool\tool-ignore\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\tool\tool-ignore\main.py:13:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\tool\tool-ignore\main.py:22:0: C0116: Missing function or method docstring (missing-function-docstring)
+cartridges\tool\tool-ignore\main.py:26:0: C0116: Missing function or method docstring (missing-function-docstring)
+cartridges\tool\tool-ignore\main.py:53:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\tool\tool-ignore\main.py:47:23: R1716: Simplify chained comparison between the operands (chained-comparison)
+cartridges\tool\tool-ignore\main.py:59:0: C0116: Missing function or method docstring (missing-function-docstring)
+cartridges\tool\tool-ignore\main.py:162:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\tool\tool-ignore\main.py:139:12: R1705: Unnecessary "else" after "return", remove the "else" and de-indent the code inside it (no-else-return)
+cartridges\tool\tool-ignore\main.py:122:0: R0911: Too many return statements (8/6) (too-many-return-statements)
+************* Module cartridges.tool.tool-stealth.main
+cartridges\tool\tool-stealth\main.py:202:0: C0301: Line too long (122/120) (line-too-long)
+cartridges\tool\tool-stealth\main.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+cartridges\tool\tool-stealth\main.py:98:19: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\tool\tool-stealth\main.py:114:0: R0914: Too many local variables (17/15) (too-many-locals)
+cartridges\tool\tool-stealth\main.py:143:16: W0702: No exception type(s) specified (bare-except)
+cartridges\tool\tool-stealth\main.py:172:19: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\tool\tool-stealth\main.py:181:11: W0718: Catching too general exception Exception (broad-exception-caught)
+cartridges\tool\tool-stealth\main.py:114:0: R0912: Too many branches (13/12) (too-many-branches)
+cartridges\tool\tool-stealth\main.py:154:20: W0612: Unused variable 'timestamp' (unused-variable)
+cartridges\tool\tool-stealth\main.py:197:4: R1705: Unnecessary "elif" after "return", remove the leading "el" from "elif" (no-else-return)
+************* Module tests.full_verification
+tests\full_verification.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+tests\full_verification.py:21:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\full_verification.py:25:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\full_verification.py:50:11: W0718: Catching too general exception Exception (broad-exception-caught)
+tests\full_verification.py:36:17: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\full_verification.py:54:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\full_verification.py:62:12: W0702: No exception type(s) specified (bare-except)
+tests\full_verification.py:66:12: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\full_verification.py:72:13: W0612: Unused variable 'out' (unused-variable)
+tests\full_verification.py:82:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\full_verification.py:88:4: W0612: Unused variable 'success' (unused-variable)
+tests\full_verification.py:97:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\full_verification.py:123:19: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\full_verification.py:119:4: W0612: Unused variable 'success' (unused-variable)
+tests\full_verification.py:119:13: W0612: Unused variable 'out' (unused-variable)
+tests\full_verification.py:119:18: W0612: Unused variable 'err' (unused-variable)
+tests\full_verification.py:132:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\full_verification.py:158:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\full_verification.py:174:18: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\full_verification.py:168:13: W0612: Unused variable 'out' (unused-variable)
+tests\full_verification.py:186:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\full_verification.py:194:11: W0718: Catching too general exception Exception (broad-exception-caught)
+************* Module tests.local_integration
+tests\local_integration.py:61:0: C0301: Line too long (122/120) (line-too-long)
+tests\local_integration.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+tests\local_integration.py:15:0: C0115: Missing class docstring (missing-class-docstring)
+tests\local_integration.py:22:12: W0702: No exception type(s) specified (bare-except)
+tests\local_integration.py:36:12: W0702: No exception type(s) specified (bare-except)
+tests\local_integration.py:44:8: R0911: Too many return statements (7/6) (too-many-return-statements)
+tests\local_integration.py:44:41: W0613: Unused argument 'payload' (unused-argument)
+tests\local_integration.py:3:0: C0411: third party import "from typer.testing import CliRunner" should be placed before "from launcher import app" (wrong-import-order)
+tests\local_integration.py:4:0: C0411: standard import "import os" should be placed before "from typer.testing import CliRunner" (wrong-import-order)
+tests\local_integration.py:5:0: C0411: standard import "import shutil" should be placed before "from typer.testing import CliRunner" (wrong-import-order)
+tests\local_integration.py:6:0: C0411: standard import "import sys" should be placed before "from typer.testing import CliRunner" (wrong-import-order)
+tests\local_integration.py:7:0: C0411: standard import "import unittest" should be placed before "from typer.testing import CliRunner" (wrong-import-order)
+tests\local_integration.py:8:0: C0411: standard import "from unittest.mock import patch" should be placed before "from typer.testing import CliRunner" (wrong-import-order)
+************* Module tests.super_test_runner
+tests\super_test_runner.py:216:0: C0301: Line too long (149/120) (line-too-long)
+tests\super_test_runner.py:307:0: C0301: Line too long (134/120) (line-too-long)
+tests\super_test_runner.py:35:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:43:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:88:11: W0718: Catching too general exception Exception (broad-exception-caught)
+tests\super_test_runner.py:71:12: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\super_test_runner.py:103:8: W0612: Unused variable 'out' (unused-variable)
+tests\super_test_runner.py:113:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:170:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:170:14: W0613: Unused argument 'repo_dir' (unused-argument)
+tests\super_test_runner.py:175:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:175:20: W0613: Unused argument 'repo_dir' (unused-argument)
+tests\super_test_runner.py:180:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:180:21: W0613: Unused argument 'repo_dir' (unused-argument)
+tests\super_test_runner.py:185:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:197:13: W0612: Unused variable 'err' (unused-variable)
+tests\super_test_runner.py:210:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:222:8: W0612: Unused variable 'out' (unused-variable)
+tests\super_test_runner.py:222:13: W0612: Unused variable 'err' (unused-variable)
+tests\super_test_runner.py:232:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:247:8: W0612: Unused variable 'out' (unused-variable)
+tests\super_test_runner.py:247:13: W0612: Unused variable 'err' (unused-variable)
+tests\super_test_runner.py:258:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:270:4: W0612: Unused variable 'rc' (unused-variable)
+tests\super_test_runner.py:270:13: W0612: Unused variable 'err' (unused-variable)
+tests\super_test_runner.py:277:9: W0612: Unused variable 'out2' (unused-variable)
+tests\super_test_runner.py:277:15: W0612: Unused variable 'err2' (unused-variable)
+tests\super_test_runner.py:281:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:285:4: W0612: Unused variable 'rc' (unused-variable)
+tests\super_test_runner.py:285:8: W0612: Unused variable 'out' (unused-variable)
+tests\super_test_runner.py:285:13: W0612: Unused variable 'err' (unused-variable)
+tests\super_test_runner.py:302:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:306:9: W1514: Using open without explicitly specifying an encoding (unspecified-encoding)
+tests\super_test_runner.py:306:14: E1123: Unexpected keyword argument 'encoding' in function call (unexpected-keyword-arg)
+tests\super_test_runner.py:332:11: W0718: Catching too general exception Exception (broad-exception-caught)
+tests\super_test_runner.py:318:12: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\super_test_runner.py:339:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:343:4: W0612: Unused variable 'rc' (unused-variable)
+tests\super_test_runner.py:343:13: W0612: Unused variable 'err' (unused-variable)
+tests\super_test_runner.py:353:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\super_test_runner.py:365:0: C0116: Missing function or method docstring (missing-function-docstring)
+************* Module tests.test_brain
+tests\test_brain.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+tests\test_brain.py:25:0: C0115: Missing class docstring (missing-class-docstring)
+tests\test_brain.py:80:15: W0718: Catching too general exception Exception (broad-exception-caught)
+tests\test_brain.py:89:28: E1120: No value for argument 'mock_kernel' in method call (no-value-for-parameter)
+************* Module tests.test_executor
+tests\test_executor.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+tests\test_executor.py:22:0: C0115: Missing class docstring (missing-class-docstring)
+************* Module tests.test_large_diff
+tests\test_large_diff.py:47:0: C0301: Line too long (135/120) (line-too-long)
+tests\test_large_diff.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+tests\test_large_diff.py:16:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_large_diff.py:20:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_large_diff.py:24:11: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\test_large_diff.py:29:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_large_diff.py:31:8: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\test_large_diff.py:40:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_large_diff.py:55:0: C0116: Missing function or method docstring (missing-function-docstring)
+************* Module tests.test_redactor
+tests\test_redactor.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+tests\test_redactor.py:4:0: E0401: Unable to import 'cartridges.security.sec_redactor.main' (import-error)
+tests\test_redactor.py:4:0: E0611: No name 'sec_redactor' in module 'cartridges.security' (no-name-in-module)
+tests\test_redactor.py:7:0: C0115: Missing class docstring (missing-class-docstring)
+tests\test_redactor.py:9:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_redactor.py:15:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_redactor.py:21:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_redactor.py:26:4: C0116: Missing function or method docstring (missing-function-docstring)
+************* Module tests.test_sanitizer
+tests\test_sanitizer.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+tests\test_sanitizer.py:2:0: E0401: Unable to import 'cartridges.security.sec_sanitizer.main' (import-error)
+tests\test_sanitizer.py:2:0: E0611: No name 'sec_sanitizer' in module 'cartridges.security' (no-name-in-module)
+tests\test_sanitizer.py:11:0: C0115: Missing class docstring (missing-class-docstring)
+tests\test_sanitizer.py:13:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_sanitizer.py:20:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_sanitizer.py:28:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_sanitizer.py:3:0: C0411: standard import "import os" should be placed before "from cartridges.security.sec_sanitizer.main import process" (wrong-import-order)
+tests\test_sanitizer.py:4:0: C0411: standard import "import sys" should be placed before "from cartridges.security.sec_sanitizer.main import process" (wrong-import-order)
+tests\test_sanitizer.py:5:0: C0411: standard import "import unittest" should be placed before "from cartridges.security.sec_sanitizer.main import process" (wrong-import-order)
+************* Module tests.test_stealth
+tests\test_stealth.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+tests\test_stealth.py:1:0: E0401: Unable to import 'tool_stealth' (import-error)
+tests\test_stealth.py:18:0: C0115: Missing class docstring (missing-class-docstring)
+tests\test_stealth.py:28:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_stealth.py:35:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_stealth.py:38:13: W1514: Using open without explicitly specifying an encoding (unspecified-encoding)
+tests\test_stealth.py:38:18: E1123: Unexpected keyword argument 'encoding' in function call (unexpected-keyword-arg)
+tests\test_stealth.py:43:13: W1514: Using open without explicitly specifying an encoding (unspecified-encoding)
+tests\test_stealth.py:43:18: E1123: Unexpected keyword argument 'encoding' in function call (unexpected-keyword-arg)
+tests\test_stealth.py:47:13: W1514: Using open without explicitly specifying an encoding (unspecified-encoding)
+tests\test_stealth.py:47:18: E1123: Unexpected keyword argument 'encoding' in function call (unexpected-keyword-arg)
+tests\test_stealth.py:52:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_stealth.py:98:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_stealth.py:113:13: W1514: Using open without explicitly specifying an encoding (unspecified-encoding)
+tests\test_stealth.py:113:18: E1123: Unexpected keyword argument 'encoding' in function call (unexpected-keyword-arg)
+tests\test_stealth.py:122:4: C0116: Missing function or method docstring (missing-function-docstring)
+tests\test_stealth.py:128:13: W1514: Using open without explicitly specifying an encoding (unspecified-encoding)
+tests\test_stealth.py:128:18: E1123: Unexpected keyword argument 'encoding' in function call (unexpected-keyword-arg)
+tests\test_stealth.py:138:13: W1514: Using open without explicitly specifying an encoding (unspecified-encoding)
+tests\test_stealth.py:138:18: E1123: Unexpected keyword argument 'encoding' in function call (unexpected-keyword-arg)
+tests\test_stealth.py:3:0: C0411: standard import "import importlib.util" should be placed before "from tool_stealth import PRIVATE_CONFIG_FILE, TEMP_DIR_NAME, ensure_gitignore, restore, stash" (wrong-import-order)
+tests\test_stealth.py:4:0: C0411: standard import "import os" should be placed before "from tool_stealth import PRIVATE_CONFIG_FILE, TEMP_DIR_NAME, ensure_gitignore, restore, stash" (wrong-import-order)
+tests\test_stealth.py:5:0: C0411: standard import "import shutil" should be placed before "from tool_stealth import PRIVATE_CONFIG_FILE, TEMP_DIR_NAME, ensure_gitignore, restore, stash" (wrong-import-order)
+tests\test_stealth.py:6:0: C0411: standard import "import sys" should be placed before "from tool_stealth import PRIVATE_CONFIG_FILE, TEMP_DIR_NAME, ensure_gitignore, restore, stash" (wrong-import-order)
+tests\test_stealth.py:7:0: C0411: standard import "import tempfile" should be placed before "from tool_stealth import PRIVATE_CONFIG_FILE, TEMP_DIR_NAME, ensure_gitignore, restore, stash" (wrong-import-order)
+tests\test_stealth.py:8:0: C0411: standard import "import unittest" should be placed before "from tool_stealth import PRIVATE_CONFIG_FILE, TEMP_DIR_NAME, ensure_gitignore, restore, stash" (wrong-import-order)
+************* Module tests.true_test_suite
+tests\true_test_suite.py:244:0: C0325: Unnecessary parens after '=' keyword (superfluous-parens)
+tests\true_test_suite.py:257:0: C0325: Unnecessary parens after '=' keyword (superfluous-parens)
+tests\true_test_suite.py:283:0: C0325: Unnecessary parens after '=' keyword (superfluous-parens)
+tests\true_test_suite.py:45:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:53:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:103:11: W0718: Catching too general exception Exception (broad-exception-caught)
+tests\true_test_suite.py:85:12: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+tests\true_test_suite.py:65:56: W0613: Unused argument 'ignore_error' (unused-argument)
+tests\true_test_suite.py:108:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:112:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:116:8: W0612: Unused variable 'out' (unused-variable)
+tests\true_test_suite.py:133:4: C0415: Import outside toplevel (stat) (import-outside-toplevel)
+tests\true_test_suite.py:139:8: E0704: The raise statement is not inside an except clause (misplaced-bare-raise)
+tests\true_test_suite.py:126:28: W0613: Unused argument 'exc_info' (unused-argument)
+tests\true_test_suite.py:144:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:154:20: W1309: Using an f-string that does not have any interpolated variables (f-string-without-interpolation)
+tests\true_test_suite.py:156:20: W1309: Using an f-string that does not have any interpolated variables (f-string-without-interpolation)
+tests\true_test_suite.py:162:15: W0718: Catching too general exception Exception (broad-exception-caught)
+tests\true_test_suite.py:191:9: W1514: Using open without explicitly specifying an encoding (unspecified-encoding)
+tests\true_test_suite.py:191:14: E1123: Unexpected keyword argument 'encoding' in function call (unexpected-keyword-arg)
+tests\true_test_suite.py:212:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:221:13: W0612: Unused variable 'err' (unused-variable)
+tests\true_test_suite.py:229:4: W0612: Unused variable 'rc_git' (unused-variable)
+tests\true_test_suite.py:234:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:243:8: W0612: Unused variable 'out' (unused-variable)
+tests\true_test_suite.py:243:13: W0612: Unused variable 'err' (unused-variable)
+tests\true_test_suite.py:248:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:256:8: W0612: Unused variable 'out' (unused-variable)
+tests\true_test_suite.py:256:13: W0612: Unused variable 'err' (unused-variable)
+tests\true_test_suite.py:261:4: W0612: Unused variable 'rc_git' (unused-variable)
+tests\true_test_suite.py:266:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:281:8: W0612: Unused variable 'out' (unused-variable)
+tests\true_test_suite.py:281:13: W0612: Unused variable 'err' (unused-variable)
+tests\true_test_suite.py:287:4: W0612: Unused variable 'rc_log' (unused-variable)
+tests\true_test_suite.py:293:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:326:8: W0612: Unused variable 'out' (unused-variable)
+tests\true_test_suite.py:326:13: W0612: Unused variable 'err' (unused-variable)
+tests\true_test_suite.py:337:4: W0612: Unused variable 'rc_ls' (unused-variable)
+tests\true_test_suite.py:349:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:360:13: W0612: Unused variable 'err' (unused-variable)
+tests\true_test_suite.py:373:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:384:13: W0612: Unused variable 'err' (unused-variable)
+tests\true_test_suite.py:390:4: W0612: Unused variable 'rc_s' (unused-variable)
+tests\true_test_suite.py:398:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:452:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:463:0: C0116: Missing function or method docstring (missing-function-docstring)
+tests\true_test_suite.py:480:11: W0718: Catching too general exception Exception (broad-exception-caught)
+tests\true_test_suite.py:482:8: C0415: Import outside toplevel (traceback) (import-outside-toplevel)
+tests\true_test_suite.py:1:0: R0801: Similar lines in 2 files
+==tests.super_test_runner:[29:56]
+==tests.true_test_suite:[39:66]
+RESULTS = {"pass": 0, "fail": 0, "skip": 0}
+
+# ========= HELPERS =========
+
+
+def log(msg, color=RESET, header=False):
+    prefix = "\n>>> " if header else "  "
+    style = BOLD if header else ""
+    print(f"{style}{color}{prefix}{msg}{RESET}")
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{prefix.strip()} {msg}\n")
+
+
+def result(name, passed, skip=False):
+    if skip:
+        RESULTS["skip"] += 1
+        log(f"ÔÅ¡´©Å  SKIP: {name}", YELLOW)
+    elif passed:
+        RESULTS["pass"] += 1
+        log(f"Ô£à PASS: {name}", GREEN)
+    else:
+        RESULTS["fail"] += 1
+        log(f"ÔØî FAIL: {name}", RED)
+
+
+def run_cmd(cmd, cwd=None, input_str=None, timeout=300, ignore_error=False):
+    """Runs a command. Returns (returncode, stdout, stderr).""" (duplicate-code)
+tests\true_test_suite.py:1:0: R0801: Similar lines in 2 files
+==tests.super_test_runner:[99:113]
+==tests.true_test_suite:[112:132]
+    args = ["push", "origin", "main"]
+    if force:
+        args.append("--force")
+    rc, out, err = git(args, cwd)
+    if rc == 0:
+        log("­ƒôñ Pushed to GitHub!", GREEN)
+    else:
+        log(f"ÔÜá´©Å Push failed: {err}", YELLOW)
+    return rc
+
+# ========= SETUP =========
+
+
+def on_rm_error(func, path, exc_info):
+    """
+    Error handler for ``shutil.rmtree``.
+    If the error is due to an access error (read only file),
+    it attempts to add write permission and then retries.
+    If the error is for another reason it re-raises the error.
+    """ (duplicate-code)
+tests\true_test_suite.py:1:0: R0801: Similar lines in 2 files
+==tests.super_test_runner:[16:28]
+==tests.true_test_suite:[25:38]
+APP_DIR = os.path.abspath(os.getcwd())
+GITPY_CMD = [sys.executable, os.path.join(APP_DIR, "launcher.py")]
+
+# Color codes
+RESET = "\033[0m"
+BOLD = "\033[1m"
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
+CYAN = "\033[96m"
+ (duplicate-code)
+tests\true_test_suite.py:1:0: R0801: Similar lines in 2 files
+==tests.super_test_runner:[81:94]
+==tests.true_test_suite:[96:108]
+            f.write(f"  [EXIT {r.returncode}]\n")
+
+        return r.returncode, stdout, stderr
+    except subprocess.TimeoutExpired:
+        log("TIMEOUT!", RED)
+        return -1, "", "TIMEOUT"
+    except Exception as e:
+        log(f"EXCEPTION: {e}", RED)
+        return -1, "", str(e)
+
+
+def git(args, cwd):
+    """Shorthand for git commands.""" (duplicate-code)
+tests\true_test_suite.py:1:0: R0801: Similar lines in 2 files
+==tests.super_test_runner:[70:79]
+==tests.true_test_suite:[84:94]
+        r = subprocess.run(
+            full_cmd, cwd=cwd, input=input_str,
+            capture_output=True, text=True, encoding='utf-8',
+            errors='replace', timeout=timeout, env=env
+        )
+        stdout = r.stdout or ""
+        stderr = r.stderr or ""
+
+        with open(LOG_FILE, "a", encoding="utf-8") as f: (duplicate-code)
+
+------------------------------------------------------------------
+Your code has been rated at 8.06/10 (previous run: 5.45/10, +2.61)
+

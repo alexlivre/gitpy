@@ -1,8 +1,11 @@
-import subprocess
-import shlex
+"""
+Central module for git-executor functionality.
+"""
 import logging
 import os
-from typing import Dict, Any, List
+import shlex
+import subprocess
+from typing import Any, Dict
 
 # Configuração de Logs
 logger = logging.getLogger("git-executor")
@@ -10,8 +13,8 @@ logger = logging.getLogger("git-executor")
 # WHITELIST: Comandos permitidos para execução direta
 # Qualquer comando fora desta lista será rejeitado por segurança.
 ALLOWED_COMMANDS = {
-    "init", "status", "diff", "add", "commit", 
-    "push", "pull", "fetch", "branch", "checkout", 
+    "init", "status", "diff", "add", "commit",
+    "push", "pull", "fetch", "branch", "checkout",
     "merge", "rebase", "log", "remote", "config",
     "rev-parse", "ls-files", "reset", "rm"
 }
@@ -19,9 +22,11 @@ ALLOWED_COMMANDS = {
 # BLACKLIST: Argumentos perigosos que devem ser bloqueados
 BLOCKED_ARGS = [
     "--hard",             # Reset hard (perigo de perda de dados sem backup)
-    "--force", "-f",      # Push force (perigo de reescrever histórico compartilhado)
+    # Push force (perigo de reescrever histórico compartilhado)
+    "--force", "-f",
     "clean"               # Git clean (remove arquivos untracked)
 ]
+
 
 def validate_command(command_str: str) -> bool:
     """
@@ -32,9 +37,9 @@ def validate_command(command_str: str) -> bool:
     parts = shlex.split(command_str)
     if not parts:
         return False
-        
+
     subcommand = parts[0]
-    
+
     # Validação de Subcomando
     if subcommand not in ALLOWED_COMMANDS:
         logger.warning(f"Comando bloqueado (não permitido): git {subcommand}")
@@ -42,9 +47,10 @@ def validate_command(command_str: str) -> bool:
 
     # Regra Especial: 'rm' só é permitido com '--cached' (para evitar deleção de arquivos)
     if subcommand == "rm" and "--cached" not in parts:
-        logger.warning("Comando bloqueado: 'git rm' requer '--cached' para segurança.")
+        logger.warning(
+            "Comando bloqueado: 'git rm' requer '--cached' para segurança.")
         return False
-        
+
     # Validação de Argumentos Perigosos
     for arg in parts:
         if arg in BLOCKED_ARGS:
@@ -53,13 +59,14 @@ def validate_command(command_str: str) -> bool:
                 continue
             logger.warning(f"Comando bloqueado (argumento perigoso): {arg}")
             return False
-            
+
     return True
+
 
 def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Executa um comando Git de forma segura.
-    
+
     Args:
         payload: {
             "repo_path": str,  # Caminho raiz do repositório
@@ -78,13 +85,13 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     # 1. Validação de Segurança (Whitelist)
     if not validate_command(command):
         return {
-            "success": False, 
-            "error": "CMD_BLOCKED", 
+            "success": False,
+            "error": "CMD_BLOCKED",
             "message": f"O comando 'git {command}' foi bloqueado pela política de segurança."
         }
 
     full_cmd = f"git {command}"
-    
+
     # 2. Dry Run (Simulação)
     if dry_run:
         return {
@@ -98,7 +105,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         # 3. Execução Real via Subprocess
         # shell=False e shlex.split para evitar Command Injection
         args = ["git"] + shlex.split(command)
-        
+
         # Prepara ambiente não-interativo
         env = os.environ.copy()
         env["GIT_TERMINAL_PROMPT"] = "0"
@@ -110,7 +117,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
             capture_output=True,
             text=True,
             encoding='utf-8',
-            errors='replace', # Evita crash com caracteres estranhos
+            errors='replace',  # Evita crash com caracteres estranhos
             env=env
         )
 

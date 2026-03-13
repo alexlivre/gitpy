@@ -1,13 +1,14 @@
 
-import unittest
 import importlib.util
-import sys
 import os
+import sys
+import unittest
 
 # Dynamic import for module with dash in name
 # Path: ../cartridges/core/git-executor/main.py
 current_dir = os.path.dirname(os.path.abspath(__file__))
-module_path = os.path.join(current_dir, "..", "cartridges", "core", "git-executor", "main.py")
+module_path = os.path.join(
+    current_dir, "..", "cartridges", "core", "git-executor", "main.py")
 
 spec = importlib.util.spec_from_file_location("git_executor", module_path)
 git_executor = importlib.util.module_from_spec(spec)
@@ -16,6 +17,7 @@ spec.loader.exec_module(git_executor)
 
 validate_command = git_executor.validate_command
 process = git_executor.process
+
 
 class TestGitExecutor(unittest.TestCase):
 
@@ -47,6 +49,7 @@ class TestGitExecutor(unittest.TestCase):
         result = process(payload)
         self.assertTrue(result["success"])
         self.assertIn("[DRY-RUN]", result["stdout"])
+
 
 if __name__ == '__main__':
     unittest.main()

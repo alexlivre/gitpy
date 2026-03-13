@@ -1,8 +1,13 @@
-import keyring
+"""
+Central module for sec-keyring functionality.
+"""
 import os
-from typing import Dict, Any
+from typing import Any, Dict
+
+import keyring
 
 SERVICE_NAME = "gitpy-cli"
+
 
 def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -36,7 +41,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
             token = keyring.get_password(SERVICE_NAME, account)
             if token:
                 return {"success": True, "value": token, "source": "keyring"}
-            
+
             return {"success": False, "error": "NOT_FOUND", "source": "none"}
 
         elif action == "delete":

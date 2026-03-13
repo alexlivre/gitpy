@@ -34,3 +34,11 @@ Thumbs.db
 desktop.ini
 
 *.pyc
+
+# Pylint
+pylint_report*.txt
+fix_lints.py
+add_docstrings.py
+
+# Backups temporários de testes
+.vibe_stealth_backup/

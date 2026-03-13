@@ -1,0 +1,16 @@
+[MASTER]
+ignore=CVS,.git,.venv,__pycache__
+
+[FORMAT]
+max-line-length=120
+
+[BASIC]
+# Permite variáveis curtas tradicionais usadas no código
+good-names=i,j,k,ex,Run,_,e,f,m,r,rc,out,err,cwd,env,cid,ui
+
+[MESSAGES CONTROL]
+# C0114: missing-module-docstring
+# C0115: missing-class-docstring
+# C0116: missing-function-docstring
+# Em testes, relaxamos as exigências de documentação intensa se não for API pública
+# Porém, mantemos ativas na raiz.

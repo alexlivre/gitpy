@@ -1,5 +1,10 @@
-from typing import Dict, Any, List
+"""
+Central module for sec-sanitizer functionality.
+"""
+from typing import Any, Dict
+
 from .dlc import check_is_blocked
+
 
 def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     """

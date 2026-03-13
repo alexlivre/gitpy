@@ -1,14 +1,15 @@
 
+import importlib.util
+import os
+import sys
 import unittest
 from unittest.mock import AsyncMock, patch
-import importlib.util
-import sys
-import os
 
 # Dynamic import for module with dash in name
 # Path: ../cartridges/ai/ai-brain/main.py
 current_dir = os.path.dirname(os.path.abspath(__file__))
-module_path = os.path.join(current_dir, "..", "cartridges", "ai", "ai-brain", "main.py")
+module_path = os.path.join(
+    current_dir, "..", "cartridges", "ai", "ai-brain", "main.py")
 
 # Ensure vibe_core and others are in path
 sys.path.insert(0, os.path.abspath(os.path.join(current_dir, '..')))
@@ -20,6 +21,7 @@ spec.loader.exec_module(ai_brain)
 
 process = ai_brain.process
 
+
 class TestAiBrain(unittest.TestCase):
 
     @patch("vibe_core.kernel.run", new_callable=AsyncMock)
@@ -29,9 +31,10 @@ class TestAiBrain(unittest.TestCase):
         """
         # Configurar respostas dos mocks
         mock_kernel.side_effect = [
-            {"sanitized_content": "diff seguro", "redacted_count": 0}, # Redactor
+            {"sanitized_content": "diff seguro", "redacted_count": 0},  # Redactor
             {"style_instructions": "Use emojis."},                     # Style
-            {"text": "feat: meu commit", "tokens_used": 10}            # Adapter (OpenAI)
+            # Adapter (OpenAI)
+            {"text": "feat: meu commit", "tokens_used": 10}
         ]
 
         payload = {
@@ -39,18 +42,18 @@ class TestAiBrain(unittest.TestCase):
             "repo_path": "/tmp",
             "provider": "openai"
         }
-        
+
         result = await process(payload)
 
         self.assertTrue(result["success"])
         self.assertEqual(result["commit_message"], "feat: meu commit")
-        self.assertEqual(mock_kernel.call_count, 3) 
-        
+        self.assertEqual(mock_kernel.call_count, 3)
+
         # Verifica chamadas
         calls = mock_kernel.call_args_list
         self.assertEqual(calls[0][0][0], "security/sec-redactor")
-        self.assertEqual(calls[1][0][0], "ai/ai-style") 
-        # Actually in brain code: kernel.run("tool/tool-style" or "ai/ai-style"?) 
+        self.assertEqual(calls[1][0][0], "ai/ai-style")
+        # Actually in brain code: kernel.run("tool/tool-style" or "ai/ai-style"?)
         # Check source code if needed, but logic is mocked.
         # But assertion checks exact string.
         # Let's hope it's consistent.
@@ -62,19 +65,21 @@ class TestAiBrain(unittest.TestCase):
         """
         # Redactor falha, Style ok, Adapter ok
         mock_kernel.side_effect = [
-            Exception("Redactor morreu"), 
+            Exception("Redactor morreu"),
             {"style_instructions": ""},
             {"text": "fix: bug", "tokens_used": 5}
         ]
-        
-        payload = {"diff": "diff perigoso", "repo_path": ".", "provider": "openai"}
-        
+
+        payload = {"diff": "diff perigoso",
+                   "repo_path": ".", "provider": "openai"}
+
         try:
             result = await process(payload)
             self.assertTrue(result["success"])
             self.assertEqual(result["commit_message"], "fix: bug")
         except Exception:
-            pass 
+            pass
+
 
 if __name__ == '__main__':
     # Hack para rodar async test no unittest padrao
@@ -89,8 +94,7 @@ if __name__ == '__main__':
     # I'll try to stick to the original pattern but I see 2 tests.
     # The original only ran one test manually! "TestAiBrain().test_brain_flow()"
     # I should try to run ALL tests.
-    
+
     # Better approach:
     # If python 3.8+:
     # class TestAiBrain(unittest.IsolatedAsyncioTestCase): ...
-    pass
