@@ -22,6 +22,8 @@ O **GitPy** é uma CLI de próxima geração que transforma seu fluxo de trabalh
 | **⚙️ Configuração Modular** | **NOVO!** Lista de arquivos ignoráveis editável via `common_trash.json`. |
 | **🎯 Whitelist Inteligente** | **NOVO!** Exceções personalizadas via comentários no `.gitignore`. |
 | **🔒 Segurança .Env** | **NOVO!** Trava de segurança intransponível para proteger `.env`. |
+| **🧪 Diagnóstico de IA** | **NOVO!** Comando `check-ai` para testar chaves e conectividade. |
+| **🚀 Multi-Provedores** | **NOVO!** Suporte nativo para **OpenRouter** e **OpenAI GPT-5**. |
 
 ---
 
@@ -42,20 +44,32 @@ pip install -r requirements.txt
 ### 2. Configure a IA (.env)
 O GitPy suporta múltiplos provedores e permite configurar o modelo padrão via `.env`.
 
-1. Crie um arquivo `.env` na pasta raiz do projeto (use o `.env.example` como base):
-2. Defina seu provedor e chaves:
+1. Crie um arquivo `.env` na pasta raiz do projeto (use o `.env.example` como base).
+2. Configure suas chaves e o modelo padrão:
 
 ```ini
-# Provedor Padrão (auto, groq, openai, gemini)
-AI_PROVIDER=groq
+# Provedor Padrão (auto, openrouter, groq, openai, gemini, ollama)
+AI_PROVIDER=auto
 
-# Modelo Específico (Opcional)
-GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-
-# Chaves de API
+# Chaves de API (Preencha as que você possui)
+OPENROUTER_API_KEY=sk-or-v1-...
 GROQ_API_KEY=gsk_...
 OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=...
 ```
+
+> [!TIP]
+> O modo `AI_PROVIDER=auto` tenta detectar automaticamente qual IA usar baseado nas chaves disponíveis, priorizando OpenRouter > Groq > OpenAI > Gemini.
+
+### 🤖 Provedores Suportados
+
+| Provedor | Modelos Recomendados | Notas |
+| :--- | :--- | :--- |
+| **OpenRouter** | `meta-llama/llama-4-scout` | Melhor relação custo/benefício e centenas de modelos. |
+| **Groq** | `meta-llama/llama-4-scout-17b` | Velocidade extrema de inferência LPU. |
+| **OpenAI** | `gpt-4o`, `gpt-5-mini` | Suporte nativo à API **GPT-5 Responses** e Reasoning. |
+| **Gemini** | `gemini-1.5-pro` | Janela de contexto massiva. |
+| **Ollama** | `llama3`, `mistral` | Execução 100% local e privada. |
 
 ### 3. Rodando o GitPy
 Você pode rodar diretamente via Python ou usar o script de conveniência `pygit.cmd` (se disponível no Windows):
@@ -115,7 +129,16 @@ python launcher.py auto --dry-run
 | `--no-push` | | **Commit Local:** Faz o commit, mas não envia ao remoto. |
 | `--nobuild` | | **Skip Deploy:** Adiciona `[CI Skip]` à mensagem para evitar deploy automático. **NOVO!** |
 | `--message "..."` | `-m` | **Dica de Contexto:** Orienta a IA (ex: `-m "fix login"`). |
-| `--model <nome>` | | **Escolher Provedor:** Seleciona a IA (groq, openai, gemini, ollama). Sobrescreve o `AI_PROVIDER` do `.env`. |
+| `--model <nome>` | | **Escolher Provedor:** Seleciona a IA (openrouter, groq, openai, gemini, ollama). Sobrescreve o `AI_PROVIDER` do `.env`. |
+
+### 🛠️ Comandos de Diagnóstico
+**NOVO!** O GitPy agora permite testar a saúde da sua configuração de IA:
+
+```bash
+python launcher.py check-ai
+```
+
+Este comando verifica se suas chaves de API estão configuradas corretamente e tenta uma comunicação básica com todos os provedores disponíveis, exibindo uma tabela informativa.
 
 ### 🌍 Opções Globais
 _(Use estas flags antes ou depois do `auto`)_

@@ -1,0 +1,9 @@
+{
+    "id": "ai-openrouter",
+    "name": "OpenRouter AI Adapter",
+    "version": "1.0.0",
+    "description": "Cartucho de comunicação direta com a plataforma OpenRouter para modelos como gemma-3 e llama-4-scout.",
+    "type": "ai",
+    "dependencies": [],
+    "entrypoint": "main.py"
+}

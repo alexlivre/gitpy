@@ -75,7 +75,7 @@ def main(
         console.print(
             "  [green]-y[/green]           Confirma tudo automaticamente")
         console.print(
-            "  [green]--model X[/green]    Escolhe o provider (groq, openai, gemini, ollama)")
+            "  [green]--model X[/green]    Escolhe o provider (auto, openrouter, groq, openai, gemini, ollama)")
         console.print(
             "\n[dim]Dica: gitpy auto --help para detalhes completos.[/dim]")
 
@@ -94,7 +94,7 @@ def auto(
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Simula ações sem executar comandos Git."),
     model: str = typer.Option(os.getenv("AI_PROVIDER", "auto"), "--model",
-                              help="Provider de IA (auto, openai, gemini, ollama, groq)."),
+                              help="Provider de IA (auto, openrouter, openai, gemini, ollama, groq)."),
     debug: bool = typer.Option(
         False, "--debug", help="Deep Trace: Ativa log profundo em .vibe-debug.log."),
     yes: bool = typer.Option(
@@ -167,7 +167,7 @@ def _auto_impl(
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Simula ações sem executar comandos Git."),
     model: str = typer.Option(os.getenv("AI_PROVIDER", "auto"), "--model",
-                              help="Provider de IA (auto, openai, gemini, ollama, groq)."),
+                              help="Provider de IA (auto, openrouter, openai, gemini, ollama, groq)."),
     debug: bool = typer.Option(
         False, "--debug", help="Deep Trace: Ativa log profundo em .vibe-debug.log."),
     yes: bool = typer.Option(
@@ -195,26 +195,32 @@ def _auto_impl(
     # Resolve Provider 'auto'
     if model == "auto":
         with console.status("[bold cyan]Detecting AI Provider...", spinner="dots"):
-            # Prioridade: Groq > OpenAI > Gemini > Ollama
+            # Prioridade: OpenRouter > Groq > OpenAI > Gemini > Ollama
             detected_provider = "openai"  # Fallback default
 
-            # Check Groq
-            groq_key = run_async(kernel.run(
-                "security/sec-keyring", {"action": "get", "service": "groq_api_key"})).get("value")
-            if groq_key:
-                detected_provider = "groq"
+            # Check OpenRouter
+            openrouter_key = run_async(kernel.run(
+                "security/sec-keyring", {"action": "get", "service": "openrouter_api_key"})).get("value")
+            if openrouter_key:
+                detected_provider = "openrouter"
             else:
-                # Check OpenAI
-                openai_key = run_async(kernel.run(
-                    "security/sec-keyring", {"action": "get", "service": "openai_api_key"})).get("value")
-                if openai_key:
-                    detected_provider = "openai"
+                # Check Groq
+                groq_key = run_async(kernel.run(
+                    "security/sec-keyring", {"action": "get", "service": "groq_api_key"})).get("value")
+                if groq_key:
+                    detected_provider = "groq"
                 else:
-                    # Check Gemini
-                    gemini_key = run_async(kernel.run(
-                        "security/sec-keyring", {"action": "get", "service": "gemini_api_key"})).get("value")
-                    if gemini_key:
-                        detected_provider = "gemini"
+                    # Check OpenAI
+                    openai_key = run_async(kernel.run(
+                        "security/sec-keyring", {"action": "get", "service": "openai_api_key"})).get("value")
+                    if openai_key:
+                        detected_provider = "openai"
+                    else:
+                        # Check Gemini
+                        gemini_key = run_async(kernel.run(
+                            "security/sec-keyring", {"action": "get", "service": "gemini_api_key"})).get("value")
+                        if gemini_key:
+                            detected_provider = "gemini"
 
         model = detected_provider
         console.print(f"[bold cyan]🤖 AI Provider: {model.upper()}[/bold cyan]")
@@ -394,6 +400,71 @@ def _auto_impl(
                     "cli/cli-renderer", {"action": "error", "message": f"Falha no commit: {exec_res.get('stderr')}"}))
     else:
         console.print("[yellow]Commit cancelado.[/yellow]")
+
+
+@app.command()
+def check_ai(
+    ctx: typer.Context
+):
+    """
+    Diagnóstico de IA: Testa a conectividade e configuração de todos os provedores.
+    """
+    from rich.table import Table
+    console = Console()
+    providers = ["openrouter", "groq", "openai", "gemini", "ollama"]
+    
+    table = Table(title="🤖 GitPy AI Provider Diagnostic", box=box.ROUNDED, border_style="purple")
+    table.add_column("Provider", style="cyan")
+    table.add_column("Config", justify="center")
+    table.add_column("Status", justify="center")
+    table.add_column("Details", style="dim")
+
+    async def run_diagnostics():
+        results = []
+        for p in providers:
+            # 1. Check Config (Key)
+            key_res = await kernel.run("security/sec-keyring", {"action": "get", "service": f"{p}_api_key"})
+            has_key = key_res.get("success", False)
+            
+            if not has_key and p != "ollama":
+                results.append((p.upper(), "🟡", "-", "API Key não encontrada no .env ou Keyring"))
+                continue
+            
+            if p == "ollama":
+                config_status = "🔵 (Local)"
+            else:
+                config_status = "🟢 (OK)"
+
+            # 2. Test Connection (Ping)
+            test_prompt = "Responda apenas 'PONG'."
+            try:
+                # Usamos um timeout menor para o check
+                test_res = await kernel.run(f"ai/ai-{p}", {
+                    "prompt": test_prompt,
+                    "system_instruction": "Você é um testador. Responda apenas PONG.",
+                    "max_tokens": 10
+                }, timeout=15)
+                
+                if test_res.get("error"):
+                    status = "🔴"
+                    details = test_res.get("message", "Erro desconhecido")
+                else:
+                    status = "🟢"
+                    details = f"Online ({test_res.get('model_used', 'default')})"
+            except Exception as e:
+                status = "🔴"
+                details = str(e)
+
+            results.append((p.upper(), config_status, status, details))
+        return results
+
+    with console.status("[bold purple]Running AI Diagnostics...", spinner="earth"):
+        diag_results = run_async(run_diagnostics())
+        for row in diag_results:
+            table.add_row(*row)
+
+    console.print(table)
+    console.print("\n[dim]Dica: Se um provedor estiver 🔴, verifique sua conexão ou validade da chave.[/dim]")
 
 
 if __name__ == "__main__":

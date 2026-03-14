@@ -35,26 +35,25 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         return {"error": "AUTH_FAIL", "message": "GROQ_API_KEY não encontrada (Use .env ou 'rastro auth')."}
 
     try:
-        client = AsyncGroq(api_key=api_key)
+        async with AsyncGroq(api_key=api_key) as client:
+            chat_completion = await client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": system_inst},
+                    {"role": "user", "content": prompt}
+                ],
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature
+            )
 
-        chat_completion = await client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_inst},
-                {"role": "user", "content": prompt}
-            ],
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature
-        )
+            content = chat_completion.choices[0].message.content
+            usage = chat_completion.usage
 
-        content = chat_completion.choices[0].message.content
-        usage = chat_completion.usage
-
-        return {
-            "text": content,
-            "tokens_used": usage.total_tokens if usage else 0,
-            "model_used": model
-        }
+            return {
+                "text": content,
+                "tokens_used": usage.total_tokens if usage else 0,
+                "model_used": model
+            }
 
     except Exception as e:
         return {"error": "API_ERR", "message": f"Groq Error: {str(e)}"}
