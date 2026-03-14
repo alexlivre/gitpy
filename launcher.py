@@ -14,18 +14,21 @@ if sys.platform == "win32":
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 from dotenv import load_dotenv
+
+# Carrega configurações do servidor/ambiente IMEDIATAMENTE (essencial para i18n)
+app_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(app_dir, ".env"))
+
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
 
 from vibe_core import kernel
+from i18n import t
 
 # Inicializa a aplicação Typer
-app_dir = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(app_dir, ".env"))
-
 app = typer.Typer(
-    help="GitPy: Agente de DevOps Autônomo.",
+    help=t("app_help"),
     add_completion=False,
     no_args_is_help=False
 )
@@ -40,14 +43,14 @@ def run_async(coro):
 def main(
     ctx: typer.Context,
     debug: bool = typer.Option(
-        False, "--debug", help="Deep Trace: Ativa o rastreamento profundo de payloads e respostas em .vibe-debug.log."),
+        False, "--debug", help=t("option_debug_help")),
     path: str = typer.Option(
-        ".", "--path", "-p", help="Caminho do repositório alvo.")
+        ".", "--path", "-p", help=t("option_path_help"))
 ):
     """
-    GitPy: Seu Co-Piloto DevOps.
+    {t('app_description')}
 
-    Use 'gitpy auto' para o modo automático.
+    {t('app_auto_usage')}
     """
     # Armazena opções globais no contexto
     ctx.obj = {"debug": debug, "path": path}
@@ -58,47 +61,41 @@ def main(
 
         console.print(Panel.fit(
             "[bold purple]GitPy[/bold purple] [white]v1.0[/white]\n"
-            "[italic]The Vibe-Coded DevOps Agent[/italic]",
+            f"[italic]{t('welcome_subtitle')}[/italic]",
             border_style="purple",
             box=box.ROUNDED
         ))
 
-        console.print(
-            "\n[bold]Uso:[/bold] [cyan]gitpy auto[/cyan] — Analisa, gera commit e faz push automaticamente.")
-        console.print("\n[bold]Flags úteis:[/bold]")
-        console.print(
-            "  [green]--debug[/green]      [bold magenta]Deep Trace Mode:[/bold magenta] Ativa log profundo em .vibe-debug.log")
-        console.print("  [green]--dry-run[/green]    Simula sem executar")
-        console.print("  [green]--no-push[/green]    Commit local, sem push")
-        console.print(
-            "  [green]-m 'texto'[/green]   Dica de contexto para a IA")
-        console.print(
-            "  [green]-y[/green]           Confirma tudo automaticamente")
-        console.print(
-            "  [green]--model X[/green]    Escolhe o provider (auto, openrouter, groq, openai, gemini, ollama)")
-        console.print(
-            "\n[dim]Dica: gitpy auto --help para detalhes completos.[/dim]")
+        console.print(f"\n[bold]{t('usage_auto')}[/bold]")
+        console.print(f"\n[bold]{t('useful_flags')}[/bold]")
+        console.print(f"  [green]--debug[/green]      [bold magenta]Deep Trace Mode:[/bold magenta] {t('option_debug_help')}")
+        console.print(f"  [green]--dry-run[/green]    {t('flag_dry_run')}")
+        console.print(f"  [green]--no-push[/green]    {t('flag_no_push')}")
+        console.print(f"  [green]-m 'texto'[/green]   {t('flag_message')}")
+        console.print(f"  [green]-y[/green]           {t('flag_yes')}")
+        console.print(f"  [green]--model X[/green]    {t('flag_model')}")
+        console.print(f"\n[dim]{t('help_hint')}[/dim]")
 
 
-@app.command()
+@app.command(help=t("cmd_auto_help"))
 def auto(
     ctx: typer.Context,
     wip: bool = typer.Option(
-        False, "--wip", help="Modo Work-In-Progress (ignora verificações de qualidade)."),
+        False, "--wip", help=t("option_wip_help")),
     no_push: bool = typer.Option(
-        False, "--no-push", help="Realiza commit local mas não envia ao remoto."),
+        False, "--no-push", help=t("flag_no_push")),
     nobuild: bool = typer.Option(
-        False, "--nobuild", help="Adiciona [CI Skip] à mensagem de commit para evitar deploy automático."),
+        False, "--nobuild", help=t("option_nobuild_help")),
     message: Optional[str] = typer.Option(
-        None, "--message", "-m", help="Dica de contexto para a IA."),
+        None, "--message", "-m", help=t("flag_message")),
     dry_run: bool = typer.Option(
-        False, "--dry-run", help="Simula ações sem executar comandos Git."),
+        False, "--dry-run", help=t("flag_dry_run")),
     model: str = typer.Option(os.getenv("AI_PROVIDER", "auto"), "--model",
-                              help="Provider de IA (auto, openrouter, openai, gemini, ollama, groq)."),
+                              help=t("flag_model")),
     debug: bool = typer.Option(
-        False, "--debug", help="Deep Trace: Ativa log profundo em .vibe-debug.log."),
+        False, "--debug", help=t("option_debug_help")),
     yes: bool = typer.Option(
-        False, "--yes", "-y", help="Confirma automaticamente todas as perguntas.")
+        False, "--yes", "-y", help=t("flag_yes"))
 ):
     """
     Modo Autônomo: Analisa mudanças, gera commit e faz push.
@@ -123,9 +120,9 @@ def auto(
 
     if not stash_res.get("success"):
         console.print(Panel(
-            f"[bold red]❌ CRITICAL ERROR: Stealth Stash Failed[/bold red]\n"
+            f"[bold red]{t('stealth_stash_failed')}[/bold red]\n"
             f"{stash_res.get('error')}\n"
-            f"[yellow]Aborting to prevent data leak.[/yellow]",
+            f"[yellow]{t('stealth_abort_prevent_leak')}[/yellow]",
             title="🛡️ Stealth Mode Abort",
             border_style="red"
         ))
@@ -134,7 +131,7 @@ def auto(
     hidden_count = len(stash_res.get("files_moved", []))
     if hidden_count > 0:
         console.print(
-            f"[bold magenta]🥷 Stealth Mode Active: {hidden_count} file(s) hidden.[/bold magenta]")
+            f"[bold magenta]{t('stealth_active', count=hidden_count)}[/bold magenta]")
     # --- STEALTH MODE END ---
 
     try:
@@ -146,11 +143,11 @@ def auto(
             "tool/tool-stealth", {"action": "restore", "repo_path": repo_path}))
         if not restore_res.get("success"):
             console.print(
-                f"[bold red]⚠️  WARNING: Failed to restore private files![/bold red]")
+                f"[bold red]{t('stealth_restore_warn')}[/bold red]")
             console.print(f"Details: {restore_res.get('details')}")
         elif restore_res.get("restored_files"):
             console.print(
-                f"[dim]🥷 Stealth Mode: {len(restore_res.get('restored_files'))} file(s) restored.[/dim]")
+                f"[dim]{t('stealth_restored', count=len(restore_res.get('restored_files')))}[/dim]")
         # --- STEALTH MODE END ---
 
 
@@ -194,69 +191,67 @@ def _auto_impl(
 
     # Resolve Provider 'auto'
     if model == "auto":
-        with console.status("[bold cyan]Detecting AI Provider...", spinner="dots"):
+        with console.status(f"[bold cyan]{t('detecting_ai')}", spinner="dots"):
             # Prioridade: OpenRouter > Groq > OpenAI > Gemini > Ollama
             detected_provider = "openai"  # Fallback default
-
-            # Check OpenRouter
+            # ... (logica de detecção omitida para brevidade no replace se possivel, mas mantida aqui)
+            
+            # Re-implementando a detecção por seguranca no chunk
             openrouter_key = run_async(kernel.run(
                 "security/sec-keyring", {"action": "get", "service": "openrouter_api_key"})).get("value")
             if openrouter_key:
                 detected_provider = "openrouter"
             else:
-                # Check Groq
                 groq_key = run_async(kernel.run(
                     "security/sec-keyring", {"action": "get", "service": "groq_api_key"})).get("value")
                 if groq_key:
                     detected_provider = "groq"
                 else:
-                    # Check OpenAI
                     openai_key = run_async(kernel.run(
                         "security/sec-keyring", {"action": "get", "service": "openai_api_key"})).get("value")
                     if openai_key:
                         detected_provider = "openai"
                     else:
-                        # Check Gemini
                         gemini_key = run_async(kernel.run(
                             "security/sec-keyring", {"action": "get", "service": "gemini_api_key"})).get("value")
                         if gemini_key:
                             detected_provider = "gemini"
 
         model = detected_provider
-        console.print(f"[bold cyan]🤖 AI Provider: {model.upper()}[/bold cyan]")
+        console.print(f"[bold cyan]{t('ai_provider_label', model=model.upper())}[/bold cyan]")
 
     # 0.5 Smart Ignore Check
-    with console.status("[bold green]Checking .gitignore health...", spinner="dots"):
+    with console.status(f"[bold green]{t('checking_ignore')}", spinner="dots"):
         ignore_res = run_async(kernel.run(
             "tool/tool-ignore", {"action": "scan", "repo_path": repo_path}))
         suggestions = ignore_res.get("suggestions", [])
 
     if suggestions:
         console.print(Panel(
-            f"[yellow]O GitPy detectou arquivos que deveriam ser ignorados:[/yellow]\n"
+            f"[yellow]{t('ignore_detected_files')}[/yellow]\n"
             f"[bold white]{', '.join(suggestions)}[/bold white]",
-            title="🧹 Smart Ignore Suggestion",
+            title=t("ignore_suggestion_title"),
             border_style="yellow"
         ))
-        if yes or typer.confirm("Deseja adicionar estes padrões ao .gitignore agora?"):
+        if yes or typer.confirm(t("ignore_confirm")):
             for pat in suggestions:
                 run_async(kernel.run(
                     "tool/tool-ignore", {"action": "add", "pattern": pat, "repo_path": repo_path}))
             console.print(
-                "[green]✅ .gitignore atualizado! Reiniciando scan...[/green]")
+                f"[green]{t('ignore_updated_restart')}[/green]")
 
     # 1. Scanner (Rápido)
-    with console.status("[bold green]Analysing repository...", spinner="dots"):
+    with console.status(f"[bold green]{t('analyzing_repo')}", spinner="dots"):
         scan_res = run_async(kernel.run(
             "core/git-scanner", {"repo_path": repo_path}))
 
     if not scan_res.get("is_repo"):
         run_async(kernel.run("cli/cli-renderer",
-                  {"action": "error", "message": "Este diretório não é um repositório Git."}))
+                  {"action": "error", "message": t("error_not_repo")}))
         raise typer.Exit(1)
 
     if not scan_res.get("has_changes"):
-        console.print("[yellow]✨ Working tree clean. Nada a fazer.[/yellow]")
+        console.print(f"[yellow]{t('clean_tree')}[/yellow]")
         return
 
     # 1.5 Defesa: Muralha de Chumbo (Sanitizer)
@@ -269,10 +264,10 @@ def _auto_impl(
         if violations > 0:
             blocked = sanitizer_res.get("blocked_files", [])
             console.print(Panel(
-                f"[bold red]🚫 BLOQUEIO DE SEGURANÇA ATIVADO![/bold red]\n\n"
-                f"Foram detectados {violations} arquivos proibidos pela Muralha de Chumbo:\n"
+                f"[bold red]{t('security_block_activated')}[/bold red]\n\n"
+                f"{t('security_files_detected', count=violations)}\n"
                 f"{', '.join(blocked)}\n\n"
-                f"[yellow]Ação abortada para proteger o repositório.[/yellow]",
+                f"[yellow]{t('security_action_blocked')}[/yellow]",
                 title="🛡️ Security Blocklist",
                 border_style="red"
             ))
@@ -287,7 +282,7 @@ def _auto_impl(
         # Modo Vibe Vault (Diff Grande)
         diff_content = diff_data.get("preview", "")
         console.print(
-            "[bold yellow]📦 Vibe Vault Activated: Diff muito grande, usando versão sumarizada.[/bold yellow]")
+            f"[bold yellow]{t('vibe_vault_activated')}[/bold yellow]")
     else:
         # Modo Direto
         diff_content = diff_data.get("content", "")
@@ -296,26 +291,31 @@ def _auto_impl(
               {"action": "diff_panel", "data": {"diff": diff_content[:2000]}}))
 
     # 2. Confirmação do Usuário
-    if not yes and not typer.confirm("Gostaria de gerar uma mensagem de commit para estas alterações?"):
-        typer.echo("Operação cancelada.")
+    if not yes and not typer.confirm(t("confirm_gen_commit")):
+        typer.echo(t("op_cancelled"))
         raise typer.Exit()
 
     # 2.5 Leitura do .gitpy (REMOVIDO - Deprecated)
     # gitpy_instructions = ""
 
     # 3. Brain (Pensando...)
-    with console.status(f"[bold purple]GitPy Brain ({model}) is thinking...", spinner="bouncingBall"):
+    with console.status(f"[bold purple]{t('brain_thinking', model=model)}", spinner="bouncingBall"):
+        # Captura o idioma do commit do .env (com sanitização simples via split('#'))
+        raw_commit_lang = os.getenv("COMMIT_LANGUAGE", "en")
+        commit_lang = raw_commit_lang.split('#')[0].strip().lower()
+
         brain_res = run_async(kernel.run("ai/ai-brain", {
             "diff": diff_content,
             "repo_path": repo_path,
             "hint": message,
             "provider": model,
+            "commit_lang": commit_lang,
             "is_truncated": (diff_mode == "ref")
         }))
 
     if not brain_res.get("success"):
         run_async(kernel.run("cli/cli-renderer",
-                  {"action": "error", "message": f"Erro na IA: {brain_res.get('message')}"}))
+                  {"action": "error", "message": t("error_ai", message=brain_res.get('message'))}))
         raise typer.Exit(1)
 
     commit_msg = brain_res.get("commit_message")
@@ -326,15 +326,15 @@ def _auto_impl(
 
     # Exibe resultado da IA
     console.print(Panel(f"[bold white]{commit_msg}[/bold white]",
-                  title="🤖 Generated Commit Message", border_style="purple"))
+                  title=t("generated_commit_title"), border_style="purple"))
 
     # 4. Execução (Commit)
     if dry_run:
-        console.print("[cyan][DRY-RUN] Commit seria executado agora.[/cyan]")
+        console.print(f"[cyan]{t('dry_run_commit')}[/cyan]")
         return
 
-    if yes or typer.confirm("Confirmar execução do commit?"):
-        with console.status("[bold blue]Committing & Pushing...", spinner="line"):
+    if yes or typer.confirm(t("confirm_exec_commit")):
+        with console.status(f"[bold blue]{t('committing_pushing')}", spinner="line"):
             # 1. Staging (git add -A)
             run_async(kernel.run("core/git-executor", {
                 "repo_path": repo_path,
@@ -364,23 +364,23 @@ def _auto_impl(
             }))
 
             if exec_res.get("success"):
-                console.print("[green]Commit realizado com sucesso! ✅[/green]")
+                console.print(f"[green]{t('commit_success')}[/green]")
 
                 # 3. Push
                 if not no_push:
                     console.print(
-                        "[bold blue]Pushing to remote... 🚀[/bold blue]")
+                        f"[bold blue]{t('pushing_remote')}[/bold blue]")
                     push_res = run_async(kernel.run("core/git-executor", {
                         "repo_path": repo_path,
                         "command": "push"
                     }))
                     if push_res.get("success"):
                         run_async(kernel.run(
-                            "cli/cli-renderer", {"action": "success", "message": "Push realizado com sucesso! 🌐"}))
+                            "cli/cli-renderer", {"action": "success", "message": t("push_success")}))
                     else:
                         # Tenta Curar (Git Healer)
                         console.print(
-                            "[bold red]❌ Falha no push. Acionando Git Healer...[/bold red]")
+                            f"[bold red]{t('push_failed_healer')}[/bold red]")
                         heal_res = run_async(kernel.run("core/git-healer", {
                             "repo_path": repo_path,
                             "failed_command": "git push",
@@ -391,15 +391,15 @@ def _auto_impl(
 
                         if heal_res.get("success"):
                             run_async(kernel.run(
-                                "cli/cli-renderer", {"action": "success", "message": f"Git Healer salvou o dia! 🚑\n{heal_res.get('message')}"}))
+                                "cli/cli-renderer", {"action": "success", "message": t("healer_saved_day", message=heal_res.get('message'))}))
                         else:
                             run_async(kernel.run(
-                                "cli/cli-renderer", {"action": "error", "message": f"Git Healer falhou: {heal_res.get('message')}"}))
+                                "cli/cli-renderer", {"action": "error", "message": t("healer_failed", message=heal_res.get('message'))}))
             else:
                 run_async(kernel.run(
-                    "cli/cli-renderer", {"action": "error", "message": f"Falha no commit: {exec_res.get('stderr')}"}))
+                    "cli/cli-renderer", {"action": "error", "message": t("commit_failed", error=exec_res.get('stderr'))}))
     else:
-        console.print("[yellow]Commit cancelado.[/yellow]")
+        console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
 
 
 @app.command()
@@ -413,11 +413,11 @@ def check_ai(
     console = Console()
     providers = ["openrouter", "groq", "openai", "gemini", "ollama"]
     
-    table = Table(title="🤖 GitPy AI Provider Diagnostic", box=box.ROUNDED, border_style="purple")
-    table.add_column("Provider", style="cyan")
-    table.add_column("Config", justify="center")
-    table.add_column("Status", justify="center")
-    table.add_column("Details", style="dim")
+    table = Table(title=t("diag_title"), box=box.ROUNDED, border_style="purple")
+    table.add_column(t("col_provider"), style="cyan")
+    table.add_column(t("col_config"), justify="center")
+    table.add_column(t("col_status"), justify="center")
+    table.add_column(t("col_details"), style="dim")
 
     async def run_diagnostics():
         results = []
@@ -427,13 +427,13 @@ def check_ai(
             has_key = key_res.get("success", False)
             
             if not has_key and p != "ollama":
-                results.append((p.upper(), "🟡", "-", "API Key não encontrada no .env ou Keyring"))
+                results.append((p.upper(), "🟡", "-", t("error_no_key")))
                 continue
             
             if p == "ollama":
-                config_status = "🔵 (Local)"
+                config_status = t("config_local")
             else:
-                config_status = "🟢 (OK)"
+                config_status = t("config_ok")
 
             # 2. Test Connection (Ping)
             test_prompt = "Responda apenas 'PONG'."
@@ -450,7 +450,7 @@ def check_ai(
                     details = test_res.get("message", "Erro desconhecido")
                 else:
                     status = "🟢"
-                    details = f"Online ({test_res.get('model_used', 'default')})"
+                    details = t("status_pinging", model=test_res.get('model_used', 'default'))
             except Exception as e:
                 status = "🔴"
                 details = str(e)
@@ -458,13 +458,13 @@ def check_ai(
             results.append((p.upper(), config_status, status, details))
         return results
 
-    with console.status("[bold purple]Running AI Diagnostics...", spinner="earth"):
+    with console.status(f"[bold purple]{t('running_diag')}", spinner="earth"):
         diag_results = run_async(run_diagnostics())
         for row in diag_results:
             table.add_row(*row)
 
     console.print(table)
-    console.print("\n[dim]Dica: Se um provedor estiver 🔴, verifique sua conexão ou validade da chave.[/dim]")
+    console.print(f"\n[dim]{t('diag_hint')}[/dim]")
 
 
 if __name__ == "__main__":

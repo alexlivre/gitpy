@@ -41,6 +41,9 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     project_instructions = ""  # Deprecated
 
     # 4. Construção do Prompt
+    commit_lang = payload.get("commit_lang", "en")
+    lang_instruction = "English (en-US)" if "en" in commit_lang else "Português Brasileiro (pt-BR)"
+    
     system_prompt = f"""Você é um Assistente DevOps Sênior.
 Sua missão é escrever mensagens de commit Git claras, concisas e úteis.
 {style_guide}
@@ -49,7 +52,7 @@ Regras:
 - Título curto (max 50 chars).
 - Corpo explicativo (se necessário).
 - Responda APENAS a mensagem do commit.
-- Idioma: Português Brasileiro (pt-BR).
+- Idioma das mensagens: {lang_instruction}.
 """
     is_truncated = payload.get("is_truncated", False)
     if is_truncated:
