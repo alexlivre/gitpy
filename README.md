@@ -24,6 +24,7 @@ O **GitPy** é uma CLI de próxima geração que transforma seu fluxo de trabalh
 | **🔒 Segurança .Env** | **NOVO!** Trava de segurança intransponível para proteger `.env`. |
 | **🧪 Diagnóstico de IA** | **NOVO!** Comando `check-ai` para testar chaves e conectividade. |
 | **🚀 Multi-Provedores** | **NOVO!** Suporte nativo para **OpenRouter** e **OpenAI GPT-5**. |
+| **🌍 Multi-Idioma** | **NOVO!** Suporte a i18n (Inglês/Português) para interface e commits. |
 
 ---
 
@@ -45,9 +46,13 @@ pip install -r requirements.txt
 O GitPy suporta múltiplos provedores e permite configurar o modelo padrão via `.env`.
 
 1. Crie um arquivo `.env` na pasta raiz do projeto (use o `.env.example` como base).
-2. Configure suas chaves e o modelo padrão:
+2. Configure o idioma, suas chaves e o provedor padrão:
 
 ```ini
+# Configurações de Idioma
+LANGUAGE=en         # Idioma da Interface (en, pt)
+COMMIT_LANGUAGE=en  # Idioma das Mensagens de Commit (en, pt-br, etc)
+
 # Provedor Padrão (auto, openrouter, groq, openai, gemini, ollama)
 AI_PROVIDER=auto
 
@@ -296,6 +301,24 @@ Se você tentar adicionar `.env` à whitelist (exceções), o GitPy:
 3. **Pense muito bem** se é realmente necessário expor essas informações
 
 ---
+
+## 🌍 Internacionalização (Multi-Idioma)
+
+**NOVO!** O GitPy agora é global. Você pode configurar idiomas diferentes para a interface do software e para as mensagens que a IA escreve nos commits.
+
+### Configuração no .env:
+- `LANGUAGE`: Define o idioma das mensagens da CLI, menus de ajuda e logs. (Opções: `en`, `pt`).
+- `COMMIT_LANGUAGE`: Define em qual idioma a IA deve escrever suas mensagens de commit. (Ex: `en`, `pt-br`, `es`).
+
+### Exemplo Bilingue:
+Se você quer a interface em português mas trabalha em um repositório internacional onde os commits devem ser em inglês:
+```env
+LANGUAGE=pt
+COMMIT_LANGUAGE=en
+```
+
+### Fallback Seguro:
+Se uma tradução estiver faltando ou o arquivo de idioma não for encontrado, o GitPy automaticamente utiliza o **Inglês** como fallback, garantindo que a aplicação nunca quebre por falta de tradução.
 
 ## 🛠️ Modo Debug Profundo (Deep Trace)
 
