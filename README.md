@@ -1,218 +1,157 @@
-# GitPy: O Co-Piloto DevOps para Seus Repositórios ☁️🤖
+# GitPy: The DevOps Co-Pilot for Your Repositories ☁️🤖
 
-> **"Não apenas versiona. Entende, Protege, Automatiza e Conserta."**
+> **"It doesn't just version. It Understands, Protects, Automates, and Heals."**
 
-O **GitPy** é uma CLI de próxima geração que transforma seu fluxo de trabalho Git. Construído sobre a **Arquitetura Vibe** (sistema modular de cartuchos plugáveis) e alimentado por IA (atualmente via **Groq**), ele atua como um engenheiro DevOps sênior pareando com você em tempo real.
+**GitPy** is a next-generation CLI that transforms your Git workflow. Built on the **Vibe Architecture** (a modular pluggable cartridge system) and powered by AI (currently via **Groq**), it acts as a senior DevOps engineer pairing with you in real-time.
 
 ---
 
-## 🌟 Destaques
+## 🌟 Highlights
 
-| Feature | Descrição |
+| Feature | Description |
 | :--- | :--- |
-| **🧠 Cérebro de IA** | Analisa seus diffs e escreve mensagens de commit semânticas (Conventional Commits). |
-| **🥷 Stealth Mode** | **NOVO!** Oculta arquivos privados (ex: agentes IA) temporariamente durante a execução, sem sujar o `.gitignore`. |
-| **🚑 Git Healer** | Detecta erros de push (conflitos, rejects) e **corrige automaticamente** usando IA. |
-| **🤖 Modo Automático** | `gitpy auto --yes` assume o controle total (scan → commit → push) sem perguntas. |
-| **🏗️ Skip Deploy** | **NOVO!** Use `--nobuild` para adicionar `[CI Skip]` e evitar deploys automáticos. |
-| **🛡️ Muralha de Chumbo** | Impede que chaves de API, senhas (`.env`) e arquivos sensíveis sejam commitados. |
-| **📦 Vibe Vault** | Detecta diffs gigantes (>100KB) e os resume automaticamente para a IA funcionar. |
-| **🧹 Smart Ignore** | Verifica proativamente o `.gitignore` antes de cada commit e sugere limpeza. |
-| **🛠️ Deep Trace** | **NOVO!** Captura payloads e respostas brutas da IA em `.vibe-debug.log` para debug profundo. |
-| **⚙️ Configuração Modular** | **NOVO!** Lista de arquivos ignoráveis editável via `common_trash.json`. |
-| **🎯 Whitelist Inteligente** | **NOVO!** Exceções personalizadas via comentários no `.gitignore`. |
-| **🔒 Segurança .Env** | **NOVO!** Trava de segurança intransponível para proteger `.env`. |
-| **🧪 Diagnóstico de IA** | **NOVO!** Comando `check-ai` para testar chaves e conectividade. |
-| **🚀 Multi-Provedores** | **NOVO!** Suporte nativo para **OpenRouter** e **OpenAI GPT-5**. |
-| **🌍 Multi-Idioma** | **NOVO!** Suporte a i18n (Inglês/Português) para interface e commits. |
+| **🧠 AI Brain** | Analyzes your diffs and writes semantic commit messages (Conventional Commits). |
+| **🥷 Stealth Mode** | **NEW!** Temporarily hides private files (e.g., AI agents) during execution without cluttering `.gitignore`. |
+| **🚑 Git Healer** | Detects push errors (conflicts, rejects) and **automatically fixes** them using AI. |
+| **🤖 Auto Mode** | `gitpy auto --yes` takes total control (scan → commit → push) without questions. |
+| **🏗️ Skip Deploy** | **NEW!** Use `--nobuild` to add `[CI Skip]` and avoid automatic deployments. |
+| **🛡️ Lead Wall** | Prevents API keys, passwords (`.env`), and sensitive files from being committed. |
+| **📦 Vibe Vault** | Detects giant diffs (>100KB) and automatically summarizes them for the AI to process. |
+| **🧹 Smart Ignore** | Proactively checks `.gitignore` before each commit and suggests cleanup. |
+| **🛠️ Deep Trace** | **NEW!** Captures raw AI payloads and responses in `.vibe-debug.log` for deep debugging. |
+| **⚙️ Modular Config** | **NEW!** List of ignorable files editable via `common_trash.json`. |
+| **🎯 Smart Whitelist** | **NEW!** Custom exceptions via comments in `.gitignore`. |
+| **🔒 .Env Security** | **NEW!** Unbreakable security lock to protect `.env`. |
+| **🧪 AI Diagnostics** | **NEW!** `check-ai` command to test keys and connectivity. |
+| **🚀 Multi-Provider** | **NEW!** Native support for **OpenRouter** and **OpenAI GPT-5**. |
+| **🌍 Multi-Language** | **NEW!** i18n support (English/Portuguese) for both interface and commits. |
 
 ---
 
-## 🛠️ Instalação Expressa
+## 🎮 Usage Guide: The One Command
 
-### Pré-requisitos
-- Python 3.10+
-- Git instalado e configurado.
-- **Autenticação SSH**: Nos testes deste projeto, o acesso ao GitHub foi configurado utilizando pares de chaves pública/privada SSH (recomendado para maior segurança e compatibilidade com automações).
-
-### 1. Clone & Setup
-```bash
-git clone https://github.com/alexlivre/gitpy.git
-cd gitpy/app
-pip install -r requirements.txt
-```
-
-### 2. Configure a IA (.env)
-O GitPy suporta múltiplos provedores e permite configurar o modelo padrão via `.env`.
-
-1. Crie um arquivo `.env` na pasta raiz do projeto (use o `.env.example` como base).
-2. Configure o idioma, suas chaves e o provedor padrão:
-
-```ini
-# Configurações de Idioma
-LANGUAGE=en         # Idioma da Interface (en, pt)
-COMMIT_LANGUAGE=en  # Idioma das Mensagens de Commit (en, pt-br, etc)
-
-# Provedor Padrão (auto, openrouter, groq, openai, gemini, ollama)
-AI_PROVIDER=auto
-
-# Chaves de API (Preencha as que você possui)
-OPENROUTER_API_KEY=sk-or-v1-...
-GROQ_API_KEY=gsk_...
-OPENAI_API_KEY=sk-...
-GEMINI_API_KEY=...
-```
-
-> [!TIP]
-> O modo `AI_PROVIDER=auto` tenta detectar automaticamente qual IA usar baseado nas chaves disponíveis, priorizando OpenRouter > Groq > OpenAI > Gemini.
-
-### 🤖 Provedores Suportados
-
-| Provedor | Modelos Recomendados | Notas |
-| :--- | :--- | :--- |
-| **OpenRouter** | `meta-llama/llama-4-scout` | Melhor relação custo/benefício e centenas de modelos. |
-| **Groq** | `meta-llama/llama-4-scout-17b` | Velocidade extrema de inferência LPU. |
-| **OpenAI** | `gpt-4o`, `gpt-5-mini` | Suporte nativo à API **GPT-5 Responses** e Reasoning. |
-| **Gemini** | `gemini-1.5-pro` | Janela de contexto massiva. |
-| **Ollama** | `llama3`, `mistral` | Execução 100% local e privada. |
-
-### 3. Rodando o GitPy
-Você pode rodar diretamente via Python ou usar o script de conveniência `pygit.cmd` (se disponível no Windows):
-
-```bash
-# Método Padrão
-python launcher.py auto
-
-# Método Curto (se pygit.cmd estiver no PATH)
-pygit auto
-```
-
----
-
-## 🎮 Guia de Uso: The One Command
-
-O GitPy foi desenhado para ser "Zero Config". O comando principal é:
+GitPy was designed to be "Zero Config". The main command is:
 
 ```bash
 python launcher.py auto
 ```
 
-> **Nota:** Por padrão, o GitPy pedirá confirmação antes de realizar o push. Para uma experiência **totalmente autônoma** (sem perguntas), adicione a flag `--yes`:
+> **Note:** By default, GitPy will ask for confirmation before pushing. For a **fully autonomous** experience (no questions), add the `--yes` flag:
 > ```bash
 > python launcher.py auto --yes
 > ```
 
-O launcher iniciará o processo de automação inteligente:
-1.  **Stealth Stash:** Esconde seus arquivos privados (`.gitpy-private`).
-2.  **Scanner:** Verifica mudanças e sugere adições ao `.gitignore`.
-3.  **Think:** Analisa o código com IA e gera o commit.
-4.  **Act:** Realiza o commit e o push seguro.
-5.  **Restore:** Devolve seus arquivos privados.
+The launcher will start the intelligent automation process:
+1.  **Stealth Stash:** Hides your private files (`.gitpy-private`).
+2.  **Scanner:** Checks for changes and suggests additions to `.gitignore`.
+3.  **Think:** Analyzes the code with AI and generates the commit.
+4.  **Act:** Performs the commit and secure push.
+5.  **Restore:** Returns your private files to their place.
 
-### Exemplos de Uso
+### Usage Examples
 
 ```bash
-# Modo automático completo
+# Full automatic mode
 python launcher.py auto --yes
 
-# Evitar deploy automático (útil para economizar cota de builds)
+# Avoid automatic deployment (useful to save build quota)
 python launcher.py auto --yes --nobuild
 
-# Apenas commit local, sem push
+# Local commit only, no push
 python launcher.py auto --yes --no-push
 
-# Simulação para verificar o que será feito
+# Simulation to check what will be done
 python launcher.py auto --dry-run
 ```
 
-### Flags e Opções
+### Flags and Options
 
-| Flag | Atalho | Função |
+| Flag | Shortcut | Function |
 | :--- | :--- | :--- |
-| `--yes` | `-y` | **Confirmação Automática:** Aceita tudo sem perguntar. |
-| `--dry-run` | | **Simulação:** Mostra o que seria feito, sem executar Git. |
-| `--no-push` | | **Commit Local:** Faz o commit, mas não envia ao remoto. |
-| `--nobuild` | | **Skip Deploy:** Adiciona `[CI Skip]` à mensagem para evitar deploy automático. **NOVO!** |
-| `--message "..."` | `-m` | **Dica de Contexto:** Orienta a IA (ex: `-m "fix login"`). |
-| `--model <nome>` | | **Escolher Provedor:** Seleciona a IA (openrouter, groq, openai, gemini, ollama). Sobrescreve o `AI_PROVIDER` do `.env`. |
+| `--yes` | `-y` | **Automatic Confirmation:** Accepts everything without asking. |
+| `--dry-run` | | **Simulation:** Shows what would be done, without executing Git. |
+| `--no-push` | | **Local Commit:** Performs the commit but doesn't send to remote. |
+| `--nobuild` | | **Skip Deploy:** Adds `[CI Skip]` to the message to avoid auto-deploy. **NEW!** |
+| `--message "..."` | `-m` | **Context Hint:** Guides the AI (e.g., `-m "fix login"`). |
+| `--model <name>` | | **Choose Provider:** Selects the AI (openrouter, groq, openai, gemini, ollama). Overrides `AI_PROVIDER` from `.env`. |
 
-### 🛠️ Comandos de Diagnóstico
-**NOVO!** O GitPy agora permite testar a saúde da sua configuração de IA:
+### 🛠️ Diagnostic Commands
+**NEW!** GitPy now allows you to test the health of your AI configuration:
 
 ```bash
 python launcher.py check-ai
 ```
 
-Este comando verifica se suas chaves de API estão configuradas corretamente e tenta uma comunicação básica com todos os provedores disponíveis, exibindo uma tabela informativa.
+This command checks if your API keys are correctly configured and attempts a basic communication with all available providers, displaying an informative table.
 
-### 🌍 Opções Globais
-_(Use estas flags antes ou depois do `auto`)_
+### 🌍 Global Options
+_(Use these flags before or after `auto`)_
 
-| Flag | Atalho | Função |
+| Flag | Shortcut | Function |
 | :--- | :--- | :--- |
-| `--debug` | | **Deep Trace:** Ativa rastreamento profundo de payloads em `.vibe-debug.log`. |
-| `--path <dir>` | `-p` | **Alvo:** Roda o GitPy em outro diretório. |
+| `--debug` | | **Deep Trace:** Enables deep payload tracking in `.vibe-debug.log`. |
+| `--path <dir>` | `-p` | **Target:** Runs GitPy in another directory. |
 
 ---
 
 ## 🥷 Stealth Mode (.gitpy-private)
 
-Precisa manter arquivos sensíveis na pasta do projeto (como configurações de agentes, logs locais) mas não quer que eles apareçam no Git e nem quer sujar o `.gitignore` público?
+Need to keep sensitive files in your project folder (like agent configs, local logs) but don't want them in Git or to clutter the public `.gitignore`?
 
-Crie um arquivo `.gitpy-private` na raiz do projeto e liste os padrões (igual ao `.gitignore`):
+Create a `.gitpy-private` file in the project root and list your patterns (just like `.gitignore`):
 
 ```text
 # .gitpy-private
-.minha_pasta_secreta/
-meus_logs_locais.txt
-configs_agente_x/*.json
+.my_secret_folder/
+local_logs.txt
+agent_configs_x/*.json
 ```
 
-**Como funciona:**
-1. Ao rodar, o GitPy move esses arquivos para uma pasta temporária oculta (`.gitpy-temp`).
-2. O Git roda "cego", sem ver esses arquivos.
-3. Ao final, o GitPy restaura tudo para o lugar original.
-4. **Segurança:** Se acabar a luz ou der erro, o GitPy restaura na próxima execução. Se houver conflito de nomes, ele salva backup.
+**How it works:**
+1. When running, GitPy moves these files to a hidden temporary folder (`.gitpy-temp`).
+2. Git runs "blind", without seeing these files.
+3. At the end, GitPy restores everything to its original place.
+4. **Safety:** If the power goes out or an error occurs, GitPy restores them in the next run. If there's a name conflict, it saves a backup.
 
 ---
 
 ## 🏗️ Skip Deploy Mode (--nobuild)
 
-**NOVO!** Economize sua cota de builds em serviços como Cloudflare Pages (limite de 500/mês) usando a flag `--nobuild`.
+**NEW!** Save your build quota on services like Cloudflare Pages (500/month limit) using the `--nobuild` flag.
 
-### Como funciona:
-- Quando você usa `--nobuild`, o GitPy automaticamente adiciona `[CI Skip]` ao início da mensagem de commit
-- Isso sinaliza para serviços de CI/CD que eles devem pular o deploy automático deste commit
-- A IA continua gerando a mensagem de commit normalmente, apenas com o prefixo adicional
+### How it works:
+- When you use `--nobuild`, GitPy automatically adds `[CI Skip]` to the beginning of the commit message.
+- This signals to CI/CD services that they should skip the automatic deployment for this commit.
+- The AI continues generating the commit message normally, just with the additional prefix.
 
-### Exemplo de uso:
+### Usage Example:
 ```bash
-# Faz commit e push normalmente, mas evita deploy automático
+# Commits and pushes normally, but avoids auto-deploy
 gitpy auto --yes --nobuild
 
-# Combine com outras flags
-gitpy auto --yes --nobuild --no-push  # Commit local apenas
-gitpy auto --yes --nobuild -m "fix: corrige bug crítico"  # Com mensagem customizada
+# combine with other flags
+gitpy auto --yes --nobuild --no-push  # Local commit only
+gitpy auto --yes --nobuild -m "fix: critical bug fix"  # With custom message
 ```
 
-### Mensagem resultante:
-Se a IA gerar `fix: ajusta margem do botão`, com `--nobuild` vira:
+### Resulting Message:
+If the AI generates `fix: adjusts button margin`, with `--nobuild` it becomes:
 ```
-[CI Skip] fix: ajusta margem do botão
+[CI Skip] fix: adjusts button margin
 ```
 
 ---
 
-## ⚙️ Configuração Modular (common_trash.json)
+## ⚙️ Modular Configuration (common_trash.json)
 
-**NOVO!** O GitPy agora permite personalizar completamente a lista de arquivos e pastas que são considerados "lixo" para serem ignorados.
+**NEW!** GitPy now allows full customization of the list of files and folders considered "trash" to be ignored.
 
-### Como funciona:
-- A lista de padrões está em `cartridges/tool/tool-ignore/common_trash.json`
-- Você pode editar este arquivo para adicionar, remover ou modificar padrões
-- O GitPy carrega dinamicamente esta lista, sem precisar mexer no código Python
+### How it works:
+- The pattern list is in `cartridges/tool/tool-ignore/common_trash.json`.
+- You can edit this file to add, remove, or modify patterns.
+- GitPy dynamically loads this list without needing to touch the Python code.
 
-### Exemplo de common_trash.json:
+### common_trash.json Example:
 ```json
 [
     ".env",
@@ -230,23 +169,23 @@ Se a IA gerar `fix: ajusta margem do botão`, com `--nobuild` vira:
 ]
 ```
 
-### Segurança:
-- Se o arquivo JSON não existir ou estiver corrompido, o GitPy usa uma lista padrão de segurança
-- A lista padrão sempre inclui: `[".env", "node_modules/", "build/"]`
+### Security:
+- If the JSON file doesn't exist or is corrupted, GitPy uses a safe default list.
+- The default list always includes: `[".env", "node_modules/", "build/"]`.
 
 ---
 
-## 🎯 Whitelist Inteligente (.gitignore)
+## 🎯 Smart Whitelist (.gitignore)
 
-**NOVO!** Controle total sobre o que deve ou não ser sugerido como "lixo" usando comentários especiais no seu `.gitignore`.
+**NEW!** Total control over what should or should not be suggested as "trash" using special comments in your `.gitignore`.
 
-### Como usar:
-Adicione um comentário no formato:
+### How to use:
+Add a comment in the format:
 ```gitignore
 # ["item1", "item2"] do not ignore
 ```
 
-### Exemplos práticos:
+### Practical examples:
 ```gitignore
 # ["build", "node_modules"] do not ignore
 *.log
@@ -257,68 +196,68 @@ Adicione um comentário no formato:
 .env
 ```
 
-### Resultado:
-- `build/` e `node_modules/` NÃO serão sugeridos como "lixo" para ignorar
-- `coverage/` NÃO será sugerido como "lixo" para ignorar
-- Os itens da whitelist sempre têm prioridade sobre o `common_trash.json`
+### Result:
+- `build/` and `node_modules/` WILL NOT be suggested as "trash" to ignore.
+- `coverage/` WILL NOT be suggested as "trash" to ignore.
+- Whitelist items always take priority over `common_trash.json`.
 
 ### Use cases:
-- **Build em produção**: Quando você quer commitar a pasta `build/` intencionalmente
-- **Node_modules específicos**: Quando precisa de certas dependências no repositório
-- **Pastas de configuração**: Quando precisa versionar arquivos que normalmente seriam ignorados
+- **Production Build**: When you want to intentionally commit the `build/` folder.
+- **Specific Node_modules**: When you need certain dependencies in the repository.
+- **Config Folders**: When you need to version files that would normally be ignored.
 
 ---
 
-## 🔒 Segurança .Env (Trava de Pânico)
+## 🔒 .Env Security (Panic Lock)
 
-**NOVO!** O GitPy implementa uma barreira de segurança intransponível para proteger seus arquivos `.env` e senhas.
+**NEW!** GitPy implements an unbreakable security barrier to protect your `.env` files and passwords.
 
-### Como funciona:
-Se você tentar adicionar `.env` à whitelist (exceções), o GitPy:
+### How it works:
+If you try to add `.env` to the whitelist (exceptions), GitPy:
 
-1. **PARA IMEDIATAMENTE** todas as operações automáticas
-2. **Exibe um alerta visual impactante:**
+1. **STOPS IMMEDIATELY** all automatic operations.
+2. **Displays a high-impact visual alert:**
    ```
-   ⚠️ ALERTA DE SEGURANÇA: O arquivo .env foi marcado para NÃO ser ignorado. 
-   Isso pode expor suas senhas no GitHub!
+   ⚠️ SECURITY ALERT: The .env file has been marked as NOT to be ignored. 
+   This could expose your passwords on GitHub!
    ```
-3. **Retorna um erro de segurança** que impede o prosseguimento
-4. **Exige confirmação manual** do usuário
+3. **Returns a security error** that prevents proceeding.
+4. **Requires manual confirmation** from the user.
 
-### Exemplo que dispara o alerta:
+### Example that triggers the alert:
 ```gitignore
 # [".env"] do not ignore
 ```
 
-### Por que isso é importante:
-- **Proteção contra acidentes**: Evita que senhas e chaves de API sejam commitadas por engano
-- **Segurança intransponível**: Nem mesmo `--yes` ou modo automático ignoram este alerta
-- **Consciência de segurança**: Força o usuário a pensar duas vezes antes de expor dados sensíveis
+### Why this is important:
+- **Protection against accidents**: Prevents passwords and API keys from being committed by mistake.
+- **Unbreakable security**: Not even `--yes` or auto mode overrides this alert.
+- **Security awareness**: Forces the user to think twice before exposing sensitive data.
 
-### Se você realmente precisa commitar .env:
-1. Remova o comentário de exceção do `.gitignore`
-2. Adicione `.env` manualmente ao `.gitignore` padrão
-3. **Pense muito bem** se é realmente necessário expor essas informações
+### If you really need to commit .env:
+1. Remove the exception comment from `.gitignore`.
+2. Manually add `.env` to the standard `.gitignore`.
+3. **Think very carefully** if it's truly necessary to expose this information.
 
 ---
 
-## 🌍 Internacionalização (Multi-Idioma)
+## 🌍 Internationalization (Multi-Language)
 
-**NOVO!** O GitPy agora é global. Você pode configurar idiomas diferentes para a interface do software e para as mensagens que a IA escreve nos commits.
+**NEW!** GitPy is now global. You can configure different languages for the software interface and for the messages that the AI writes in the commits.
 
-### Configuração no .env:
-- `LANGUAGE`: Define o idioma das mensagens da CLI, menus de ajuda e logs. (Opções: `en`, `pt`).
-- `COMMIT_LANGUAGE`: Define em qual idioma a IA deve escrever suas mensagens de commit. (Ex: `en`, `pt-br`, `es`).
+### Config in .env:
+- `LANGUAGE`: Defines the language for CLI messages, help menus, and logs. (Options: `en`, `pt`).
+- `COMMIT_LANGUAGE`: Defines in which language the AI should write its commit messages. (e.g., `en`, `pt-br`, `es`).
 
-### Exemplo Bilingue:
-Se você quer a interface em português mas trabalha em um repositório internacional onde os commits devem ser em inglês:
+### Bilingual Example:
+If you want the interface in Portuguese but work in an international repository where commits should be in English:
 ```env
 LANGUAGE=pt
 COMMIT_LANGUAGE=en
 ```
 
-### Fallback Seguro:
-Se uma tradução estiver faltando ou o arquivo de idioma não for encontrado, o GitPy automaticamente utiliza o **Inglês** como fallback, garantindo que a aplicação nunca quebre por falta de tradução.
+### Safe Fallback:
+If a translation is missing or the language file is not found, GitPy automatically uses **English** as fallback, ensuring the application never breaks due to a missing translation.
 
 ## 🛠️ Modo Debug Profundo (Deep Trace)
 
@@ -449,116 +388,116 @@ gitpy auto --yes --nobuild  # Evita deploy automático
 
 ---
 
-## 🧩 O que acontece "Under the Hood"?
+## 🧩 What happens "Under the Hood"?
 
-### ⚙️ Sistema de Configuração Modular
-O GitPy agora possui um sistema inteligente de configuração que equilibra **flexibilidade** e **segurança**:
+### ⚙️ Modular Configuration System
+GitPy now has an intelligent configuration system that balances **flexibility** and **security**:
 
-1. **Carregamento Dinâmico**: A lista de "lixo" é carregada de `common_trash.json` com fallback seguro
-2. **Parser de Exceções**: Analisa comentários no `.gitignore` no formato `# ["item1"] do not ignore`
-3. **Whitelist com Prioridade**: Exceções no `.gitignore` sempre vencem sobre a lista padrão
-4. **Trava de Segurança .Env**: Detecção automática de `.env` nas exceções com bloqueio total
+1. **Dynamic Loading**: The "trash" list is loaded from `common_trash.json` with a safe fallback.
+2. **Exception Parser**: Analyzes comments in `.gitignore` in the format `# ["item1"] do not ignore`.
+3. **Priority Whitelist**: Exceptions in `.gitignore` always win over the default list.
+4. **.Env Security Lock**: Automatic detection of `.env` in exceptions with a total block.
 
-### 🚑 Git Healer (Auto-Correção)
-Se o `git push` falhar (ex: conflito, remoto à frente), o GitPy não desiste. Ele entra em modo de cura, pede instruções à IA sobre como corrigir o erro específico, aplica a correção e tenta novamente.
+### 🚑 Git Healer (Auto-Correction)
+If `git push` fails (e.g., conflict, remote ahead), GitPy doesn't give up. It enters healer mode, asks the AI for instructions on how to fix the specific error, applies the fix, and tries again.
 
-### 🛡️ Muralha de Chumbo (Security)
-Um sistema de 3 camadas protege seus segredos:
-1.  **Blocklist:** Impede leitura de arquivos `.env` e chaves SSH.
-2.  **Redactor:** Mascara senhas e tokens no diff antes de enviar para a IA.
-3.  **Stealth Mode:** Esconde fisicamente arquivos sensíveis durante a operação.
-4.  **Trava de Pânico .Env:** Alerta visual e bloqueio total se `.env` for marcado como exceção
+### 🛡️ Lead Wall (Security)
+A 3-layer system protects your secrets:
+1.  **Blocklist:** Prevents reading of `.env` files and SSH keys.
+2.  **Redactor:** Masks passwords and tokens in the diff before sending to the AI.
+3.  **Stealth Mode:** Physically hides sensitive files during the operation.
+4.  **Panic Lock .Env:** Visual alert and total block if `.env` is marked as an exception.
 
 ### 📦 Vibe Architecture (Cartridges)
-O GitPy é modular. Cada funcionalidade é um "cartucho" isolado em `cartridges/`:
--   `ai/`: Adaptadores para diferentes LLMs.
--   `core/`: Lógica Git profunda (Scanner, Executor, Healer).
--   `security/`: Módulos de proteção.
--   `tool/`: Ferramentas auxiliares (Stealth, Smart Ignore, Tool-Ignore com configuração modular).
+GitPy is modular. Each functionality is an isolated "cartridge" in `cartridges/`:
+-   `ai/`: Adapders for different LLMs.
+-   `core/`: Deep Git logic (Scanner, Executor, Healer).
+-   `security/`: Protection modules.
+-   `tool/`: Auxiliary tools (Stealth, Smart Ignore, Tool-Ignore with modular configuration).
 
-O arquivo `launcher.py` é apenas o maestro que rege essa orquestra.
+The `launcher.py` file is just the conductor leading this orchestra.
 
 ---
 
 **GitPy: Code Smarter, Not Harder.** 💜
 
-## 🧰 Wrappers de Linha de Comando do GitPy
+## 🧰 GitPy Command Line Wrappers
 
 ### gitpy.cmd
-- Executa `python "%~dp0launcher.py" %*` usando o mesmo diretório do arquivo [`launcher.py`](file:///c:/code/GitHub/gitpy/launcher.py) para que o GitPy possa ser invocado de qualquer pasta. O `%~dp0` expande para a pasta onde o `.cmd` reside, garantindo que todas as importações relativas e assets do projeto sejam resolvidos mesmo quando o comando for chamado fora da raiz.
-- Como invoca diretamente o Python disponível no PATH do sistema, evita a necessidade de digitar o caminho completo até o `launcher.py` ou trocar de diretório antes de executar a automação.
+- Runs `python "%~dp0launcher.py" %*` using the same directory as the [`launcher.py`](file:///c:/code/GitHub/gitpy/launcher.py) file so that GitPy can be invoked from any folder. The `%~dp0` expands to the folder where the `.cmd` resides, ensuring that all relative imports and project assets are resolved even when the command is called outside the root.
+- Since it directly invokes the Python available in the system PATH, it avoids the need to type the full path to `launcher.py` or change directories before running the automation.
 
 ### pygit.cmd
-- Ativa o ambiente virtual do projeto chamando `C:\code\GitHub\gitpy\.venv\Scripts\activate.bat`, permitindo que comandos subsequentes (como `python launcher.py auto`) reutilizem as dependências fixas do projeto sem reconfigurar nada manualmente.
-- Ao manter o caminho absoluto para `.venv`, o wrapper elimina a necessidade de localizar o ambiente virtual em cada máquina e facilita o uso do mesmo em qualquer terminal do Windows.
+- Activates the project's virtual environment by calling `C:\code\GitHub\gitpy\.venv\Scripts\activate.bat`, allowing subsequent commands (like `python launcher.py auto`) to reuse the project's fixed dependencies without manually reconfiguring anything.
+- By maintaining the absolute path to `.venv`, the wrapper eliminates the need to locate the virtual environment on each machine and facilitates its use in any Windows terminal.
 
-### Por que esses wrappers existem e como adaptar os caminhos
-Os wrappers resolvem duas dores principais no Windows:
-1. **Resolução de caminho relativo**: o `%~dp0` garante que o Python localize `launcher.py` e os módulos associados mesmo quando você está em outra pasta.
-2. **Virtualenv consistente**: `pygit.cmd` conecta você diretamente ao `.venv` localizado na raiz do repositório, garantindo o mesmo conjunto de dependências usado pela equipe.
+### Why these wrappers exist and how to adapt the paths
+Wrappers solve two main pain points on Windows:
+1. **Relative path resolution**: `%~dp0` ensures Python locates `launcher.py` and associated modules even when you are in another folder.
+2. **Consistent virtualenv**: `pygit.cmd` connects you directly to the `.venv` located at the repository root, ensuring the same set of dependencies used by the team.
 
-Ambos usam caminhos absolutos (`C:\code\GitHub\gitpy\` e `C:\code\GitHub\gitpy\.venv\Scripts\activate.bat`) apenas como exemplo. Para adaptar os wrappers em outro ambiente:
-- **Windows**: descubra o caminho real do repositório (explorador ou `cd` + `cd` + `cd` + `cd`). No `pygit.cmd`, substitua o prefixo pelo diretório correto (`SEU_CAMINHO\.venv\Scripts\activate.bat`). Mantenha `gitpy.cmd` com `%~dp0` para continuar resolvendo o launcher automaticamente. Ao mover a pasta, basta atualizar o PATH do sistema para incluir a nova raiz.
-- **Linux/macOS**: crie scripts `gitpy.sh` e `pygit.sh` na raiz com `SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"` e use `source "$SCRIPT_DIR/.venv/bin/activate"`. Adicione o diretório da raiz ao PATH via `~/.profile`, `~/.bashrc` ou equivalente.
+Both use absolute paths (`C:\code\GitHub\gitpy\` and `C:\code\GitHub\gitpy\.venv\Scripts\activate.bat`) as examples only. To adapt the wrappers in another environment:
+- **Windows**: find the real repository path (explorer or `cd`). In `pygit.cmd`, replace the prefix with the correct directory (`YOUR_PATH\.venv\Scripts\activate.bat`). Keep `gitpy.cmd` with `%~dp0` to continue resolving the launcher automatically. When moving the folder, just update the system PATH to include the new root.
+- **Linux/macOS**: create `gitpy.sh` and `pygit.sh` scripts in the root with `SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"` and use `source "$SCRIPT_DIR/.venv/bin/activate"`. Add the root directory to the PATH via `~/.profile`, `~/.bashrc`, or equivalent.
 
-### Adicionando a pasta do GitPy ao PATH do Windows
-1. Abra o menu Iniciar e pesquise por "Editar variáveis de ambiente do sistema".
-2. Em "Variáveis do sistema", selecione `Path` e clique em "Editar".
-3. Adicione um novo item com o caminho completo da pasta que contém `gitpy.cmd` e `pygit.cmd`.
-4. Confirme e abra um novo terminal para carregar o PATH atualizado.
-5. (Opcional) execute `refreshenv` ou reinicie o terminal.
+### Adding the GitPy folder to Windows PATH
+1. Open the Start menu and search for "Edit the system environment variables".
+2. Under "System variables", select `Path` and click "Edit".
+3. Add a new item with the full path of the folder containing `gitpy.cmd` and `pygit.cmd`.
+4. Confirm and open a new terminal to load the updated PATH.
+5. (Optional) run `refreshenv` or restart the terminal.
 
-### Verificação de sucesso no Windows
-- `where gitpy.cmd` deve retornar o caminho completo até o script.
-- `gitpy auto --dry-run` deve funcionar de qualquer pasta sem precisar de `cd`.
-- `pygit` deve mostrar o prefixo `(.venv)` e permitir `pygit python launcher.py --help`.
+### Success Verification on Windows
+- `where gitpy.cmd` should return the full path to the script.
+- `gitpy auto --dry-run` should work from any folder without needing `cd`.
+- `pygit` should show the `(.venv)` prefix and allow `pygit python launcher.py --help`.
 
-### Portando a lógica para Linux: gitpy.sh e pygit.sh
-- **Estrutura**:
+### Porting logic to Linux: gitpy.sh and pygit.sh
+- **Structure**:
   ```bash
   #!/usr/bin/env bash
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   python "$SCRIPT_DIR/launcher.py" "$@"
   ```
-- **Ativando virtualenv**:
+- **Activating virtualenv**:
   ```bash
   #!/usr/bin/env bash
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   source "$SCRIPT_DIR/.venv/bin/activate"
   ```
-- **Diferenças e permissões**:
-  1. `.cmd` depende de comandos do Windows (`@echo off`, `%~dp0`); `.sh` requer shebang, `$(...)` e `"$@"` para argumentos.
-  2. `.sh` precisa de `chmod +x gitpy.sh pygit.sh`; `.cmd` funciona sem permissão extra.
-  3. Use `/usr/local/bin` ou `~/.local/bin` para versões globais ou crie `ln -s /caminho/para/gitpy.sh /usr/local/bin/gitpy`.
+- **Differences and permissions**:
+  1. `.cmd` depends on Windows commands (`@echo off`, `%~dp0`); `.sh` requires shebang, `$(...)` and `"$@"` for arguments.
+  2. `.sh` needs `chmod +x gitpy.sh pygit.sh`; `.cmd` works without extra permission.
+  3. Use `/usr/local/bin` or `~/.local/bin` for global versions or create `ln -s /path/to/gitpy.sh /usr/local/bin/gitpy`.
 
-### Como verificar a ativação do ambiente virtual
+### How to verify virtual environment activation
 - **Windows (cmd/powershell)**:
-  1. Execute `C:\seu\caminho\gitpy\pygit.cmd` e confirme o prefixo `(.venv)`.
-  2. `where python` deve apontar para `.venv\Scripts\python.exe`.
-  3. `python -c "import os; print(os.environ.get('VIRTUAL_ENV'))"` deve imprimir o caminho da virtualenv.
+  1. Run `C:\your\path\gitpy\pygit.cmd` and confirm the `(.venv)` prefix.
+  2. `where python` should point to `.venv\Scripts\python.exe`.
+  3. `python -c "import os; print(os.environ.get('VIRTUAL_ENV'))"` should print the virtualenv path.
 - **Linux/macOS**:
-  1. `source /seu/caminho/gitpy/.venv/bin/activate` deve mostrar o prefixo `(.venv)`.
-  2. `which python` deve apontar para `.venv/bin/python`.
-  3. `echo $VIRTUAL_ENV` e `python -c "import sys; print(sys.prefix)"` devem coincidir com o `.venv`.
+  1. `source /your/path/gitpy/.venv/bin/activate` should show the `(.venv)` prefix.
+  2. `which python` should point to `.venv/bin/python`.
+  3. `echo $VIRTUAL_ENV` and `python -c "import sys; print(sys.prefix)"` should match the `.venv`.
 
-### Substituindo os exemplos nos wrappers
-- No Windows, atualize `pygit.cmd` para `D:\workspace\gitpy\.venv\Scripts\activate.bat` ou use `%~dp0` para caminhos relativos.
-- No Linux, confirme o `pwd` e ajuste `source "$SCRIPT_DIR/.venv/bin/activate"` para apontar para o `.venv` correto.
+### Replacing examples in wrappers
+- On Windows, update `pygit.cmd` to `D:\workspace\gitpy\.venv\Scripts\activate.bat` or use `%~dp0` for relative paths.
+- On Linux, confirm `pwd` and adjust `source "$SCRIPT_DIR/.venv/bin/activate"` to point to the correct `.venv`.
 
-### Exemplos de uso após a configuração
+### Usage examples after setup
 - **Windows**:
   ```powershell
-  cd C:\Users\alice\projetos\outro-repo
+  cd C:\Users\alice\projects\other-repo
   gitpy auto --yes --no-push
   pygit python launcher.py --dry-run
   ```
-- **Linux** (supondo `/usr/local/bin` no PATH):
+- **Linux** (assuming `/usr/local/bin` in PATH):
   ```bash
-  cd ~/outro-projeto
+  cd ~/other-project
   gitpy auto --yes --nobuild
   pygit python launcher.py --help
   ```
-Esses comandos funcionam a partir de qualquer diretório porque o PATH resolve os wrappers globalmente e cada script descobre a raiz do GitPy internamente.
+These commands work from any directory because the PATH resolves the wrappers globally and each script discovers the GitPy root internally.
 
-### Observações finais
-Mantenha os wrappers na raiz do projeto e use os comandos descritos acima como templates. Atualize os caminhos sempre que mover o repositório ou recriar o `.venv`, garantindo consistência para toda a equipe.
+### Final observations
+Keep the wrappers in the project root and use the commands described above as templates. Update the paths whenever you move the repository or recreate the `.venv`, ensuring consistency for the entire team.
