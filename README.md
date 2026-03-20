@@ -141,6 +141,43 @@ GitPy validates branch names to ensure they follow Git standards:
 - Cannot be reserved names (HEAD, master, main, etc.)
 - Maximum 255 characters
 
+### 🔄 Branch Navigation with GitPy
+
+**PRO TIP:** You can use GitPy's `--branch` flag to navigate between existing branches, not just create new ones.
+
+#### Navigation Examples:
+```bash
+# Switch to main branch and work there
+python launcher.py auto --yes --branch main
+
+# Switch to development branch
+python launcher.py auto --yes --branch develop
+
+# Switch to any existing branch
+python launcher.py auto --yes --branch feature-auth
+```
+
+#### How it works:
+- **If branch exists**: GitPy switches to it and performs operations there
+- **If branch doesn't exist**: GitPy creates it first, then switches
+- **Without --branch**: GitPy works on your current branch
+
+#### Common Workflow:
+```bash
+# You're currently on a test branch
+$ git branch --show-current
+dev-teste
+
+# Switch back to main using GitPy
+python launcher.py auto --yes --branch main
+
+# Now you're on main and ready to work
+$ git branch --show-current
+main
+```
+
+This makes GitPy a complete branch management tool, not just for creating test branches!
+
 ---
 
 ## 🥷 Stealth Mode (.gitpy-private)
