@@ -49,6 +49,38 @@ The launcher will start the intelligent automation process:
 4.  **Act:** Performs the commit and secure push.
 5.  **Restore:** Returns your private files to their place.
 
+### Interactive Menu Mode (NEW!)
+
+GitPy now supports a guided menu powered by **InquirerPy**.
+
+```bash
+# Opens the interactive menu (when terminal is interactive / TTY)
+python launcher.py
+
+# Explicit menu command
+python launcher.py menu
+
+# Optional wrappers
+gitpy
+gitpy menu
+```
+
+Menu coverage:
+- `Auto` wizard exposes all current options: `path`, `model`, `message`, `branch`, `wip`, `dry_run`, `no_push`, `nobuild`, `debug`, `yes`.
+- `Branch Center` now includes branch-specific operations: current branch, list local/remote, validate name, create+switch, and switch existing branch.
+- `Check AI` runs the same diagnostics flow as `python launcher.py check-ai`.
+- `Reset Repository` opens `git_reset_to_github.py` in guided modes (`summary`, `dry-run`, `full reset`).
+- `View Resources` shows the complete GitPy resource map (CLI flows, wrappers, global options, i18n).
+- `Exit` closes the interactive session.
+
+After each operation, you can return to the main menu and keep navigating without restarting GitPy.
+Prompt behavior is now explicit: list prompts use arrows + Enter, text prompts ask you to type and press Enter.
+
+Compatibility notes:
+- Existing CLI flows are unchanged (`auto`, `check-ai`, all flags and ordering continue to work).
+- In non-interactive environments (CI/pipes, no TTY), GitPy will not try to open menus automatically.
+- `InquirerPy` is now part of dependencies (`pip install -r requirements.txt`).
+
 ### Usage Examples
 
 ```bash
