@@ -60,5 +60,12 @@
     "error_no_key": "API Key not found in .env or Keyring",
     "config_local": "🔵 (Local)",
     "config_ok": "🟢 (OK)",
-    "status_pinging": "Online ({model})"
+    "status_pinging": "Online ({model})",
+    "option_branch_help": "Create/use test branch for operations",
+    "branch_creating": "Creating test branch '{branch}'...",
+    "branch_switching": "Switching to branch '{branch}'...",
+    "branch_exists": "Branch '{branch}' already exists, switching to it...",
+    "branch_success": "Now on branch '{branch}'",
+    "branch_error": "Failed to create/switch branch '{branch}': {error}",
+    "branch_invalid_name": "Invalid branch name '{branch}': {error}"
 }

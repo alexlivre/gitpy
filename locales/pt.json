@@ -60,5 +60,12 @@
     "error_no_key": "Chave API não encontrada no .env ou Keyring",
     "config_local": "🔵 (Local)",
     "config_ok": "🟢 (OK)",
-    "status_pinging": "Online ({model})"
+    "status_pinging": "Online ({model})",
+    "option_branch_help": "Criar/usar branch de teste para operações",
+    "branch_creating": "Criando branch de teste '{branch}'...",
+    "branch_switching": "Alternando para branch '{branch}'...",
+    "branch_exists": "Branch '{branch}' já existe, alternando para ela...",
+    "branch_success": "Agora na branch '{branch}'",
+    "branch_error": "Falha ao criar/alternar branch '{branch}': {error}",
+    "branch_invalid_name": "Nome de branch inválido '{branch}': {error}"
 }

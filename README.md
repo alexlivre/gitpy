@@ -25,6 +25,7 @@
 | **🧪 AI Diagnostics** | **NEW!** `check-ai` command to test keys and connectivity. |
 | **🚀 Multi-Provider** | **NEW!** Native support for **OpenRouter** and **OpenAI GPT-5**. |
 | **🌍 Multi-Language** | **NEW!** i18n support (English/Portuguese) for both interface and commits. |
+| **🌿 Test Branch Mode** | **NEW!** Create/use test branches with `--branch` flag for safe operations. |
 
 ---
 
@@ -54,6 +55,12 @@ The launcher will start the intelligent automation process:
 # Full automatic mode
 python launcher.py auto --yes
 
+# Create and use a test branch for safe operations
+python launcher.py auto --yes --branch feature-test
+
+# Use existing branch
+python launcher.py auto --yes --branch existing-branch
+
 # Avoid automatic deployment (useful to save build quota)
 python launcher.py auto --yes --nobuild
 
@@ -62,6 +69,9 @@ python launcher.py auto --yes --no-push
 
 # Simulation to check what will be done
 python launcher.py auto --dry-run
+
+# Combine branch with other flags
+python launcher.py auto --yes --branch test --no-push --nobuild
 ```
 
 ### Flags and Options
@@ -72,6 +82,7 @@ python launcher.py auto --dry-run
 | `--dry-run` | | **Simulation:** Shows what would be done, without executing Git. |
 | `--no-push` | | **Local Commit:** Performs the commit but doesn't send to remote. |
 | `--nobuild` | | **Skip Deploy:** Adds `[CI Skip]` to the message to avoid auto-deploy. **NEW!** |
+| `--branch <name>` | `-b` | **Test Branch:** Creates/uses a test branch for operations. **NEW!** |
 | `--message "..."` | `-m` | **Context Hint:** Guides the AI (e.g., `-m "fix login"`). |
 | `--model <name>` | | **Choose Provider:** Selects the AI (openrouter, groq, openai, gemini, ollama). Overrides `AI_PROVIDER` from `.env`. |
 
@@ -91,6 +102,44 @@ _(Use these flags before or after `auto`)_
 | :--- | :--- | :--- |
 | `--debug` | | **Deep Trace:** Enables deep payload tracking in `.vibe-debug.log`. |
 | `--path <dir>` | `-p` | **Target:** Runs GitPy in another directory. |
+
+---
+
+## 🌿 Test Branch Mode (--branch)
+
+**NEW!** GitPy now supports creating and using test branches to safely test changes without affecting your main branch.
+
+### How it works:
+- When you use `--branch <name>`, GitPy will:
+  1. **Create** the branch if it doesn't exist
+  2. **Switch** to the specified branch
+  3. **Perform** all operations (scan, commit, push) on that branch
+  4. **Keep** you on the test branch after operations complete
+
+### Usage Examples:
+```bash
+# Create a new test branch and work on it
+python launcher.py auto --yes --branch feature-login-fix
+
+# Use an existing branch
+python launcher.py auto --yes --branch develop
+
+# Combine with other flags for complete control
+python launcher.py auto --yes --branch experiment --no-push --nobuild
+```
+
+### Benefits:
+- **Safety**: Test changes without risking your main branch
+- **Isolation**: Keep experimental work separate
+- **Flexibility**: Works with all existing GitPy features
+- **Convenience**: One command to create, switch, and work on a branch
+
+### Branch Name Validation:
+GitPy validates branch names to ensure they follow Git standards:
+- Must start with a letter or number
+- Can contain letters, numbers, dots, hyphens, and underscores
+- Cannot be reserved names (HEAD, master, main, etc.)
+- Maximum 255 characters
 
 ---
 

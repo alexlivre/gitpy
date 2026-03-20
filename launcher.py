@@ -95,7 +95,9 @@ def auto(
     debug: bool = typer.Option(
         False, "--debug", help=t("option_debug_help")),
     yes: bool = typer.Option(
-        False, "--yes", "-y", help=t("flag_yes"))
+        False, "--yes", "-y", help=t("flag_yes")),
+    branch: Optional[str] = typer.Option(
+        None, "--branch", "-b", help=t("option_branch_help"))
 ):
     """
     Modo Autônomo: Analisa mudanças, gera commit e faz push.
@@ -104,6 +106,67 @@ def auto(
     repo_path = ctx.params.get("path", ".")
     if repo_path == ".":
         repo_path = os.getcwd()
+
+    # --- BRANCH MANAGEMENT START ---
+    original_branch = None
+    if branch:
+        # Armazenar branch atual
+        try:
+            current_res = run_async(kernel.run("core/git-branch", 
+                {"action": "current", "repo_path": repo_path}))
+            if current_res.get("success"):
+                original_branch = current_res.get("current_branch")
+        except Exception:
+            pass  # Ignora erro ao obter branch atual
+        
+        # Validar nome da branch
+        validation_res = run_async(kernel.run("core/git-branch", 
+            {"action": "validate", "branch_name": branch, "repo_path": repo_path}))
+        if not validation_res.get("valid"):
+            console.print(Panel(
+                f"[bold red]{t('branch_invalid_name', branch=branch)}[/bold red]\n"
+                f"{validation_res.get('error')}",
+                title="❌ Erro de Validação",
+                border_style="red"
+            ))
+            raise typer.Exit(1)
+        
+        # Verificar se branch existe e criar/alternar conforme necessário
+        exists_res = run_async(kernel.run("core/git-branch", 
+            {"action": "exists", "branch_name": branch, "repo_path": repo_path}))
+        
+        if exists_res.get("exists"):
+            console.print(f"[bold yellow]{t('branch_exists', branch=branch)}[/bold yellow]")
+            action_msg = t("branch_switching", branch=branch)
+        else:
+            action_msg = t("branch_creating", branch=branch)
+        
+        with console.status(f"[bold cyan]{action_msg}[/bold cyan]", spinner="dots"):
+            if exists_res.get("exists"):
+                # Alternar para branch existente
+                switch_res = run_async(kernel.run("core/git-branch", 
+                    {"action": "switch", "branch_name": branch, "repo_path": repo_path}))
+            else:
+                # Criar e alternar para nova branch
+                # Primeiro cria, depois alterna
+                create_res = run_async(kernel.run("core/git-branch", 
+                    {"action": "create", "branch_name": branch, "repo_path": repo_path}))
+                if create_res.get("success"):
+                    switch_res = run_async(kernel.run("core/git-branch", 
+                        {"action": "switch", "branch_name": branch, "repo_path": repo_path}))
+                else:
+                    switch_res = {"success": False, "error": create_res.get("error")}
+        
+        if not switch_res.get("success"):
+            console.print(Panel(
+                f"[bold red]{t('branch_error', branch=branch, error=switch_res.get('error'))}[/bold red]",
+                title="❌ Erro na Branch",
+                border_style="red"
+            ))
+            raise typer.Exit(1)
+        
+        console.print(f"[bold green]{t('branch_success', branch=branch)}[/bold green]")
+    # --- BRANCH MANAGEMENT END ---
 
     # --- STEALTH MODE START ---
     # 0. Recovery (Tenta restaurar sobras de crash anterior)
@@ -136,7 +199,7 @@ def auto(
 
     try:
         _auto_impl(ctx, wip, no_push, nobuild,
-                   message, dry_run, model, debug, yes)
+                   message, dry_run, model, debug, yes, branch)
     finally:
         # --- STEALTH MODE RESTORE ---
         restore_res = run_async(kernel.run(
@@ -168,7 +231,9 @@ def _auto_impl(
     debug: bool = typer.Option(
         False, "--debug", help="Deep Trace: Ativa log profundo em .vibe-debug.log."),
     yes: bool = typer.Option(
-        False, "--yes", "-y", help="Confirma automaticamente todas as perguntas.")
+        False, "--yes", "-y", help="Confirma automaticamente todas as perguntas."),
+    branch: Optional[str] = typer.Option(
+        None, "--branch", "-b", help="Criar/usar branch de teste para operações.")
 ):
     """
     Modo Autônomo: Analisa mudanças, gera commit e faz push.
