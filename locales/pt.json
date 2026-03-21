@@ -1,5 +1,7 @@
 {
     "app_help": "GitPy: Agente de DevOps Autônomo.",
+    "breadcrumb_root": "Raiz",
+    "breadcrumb_separator": " > ",
     "app_description": "GitPy: Seu Co-Piloto DevOps.",
     "app_auto_usage": "Use 'gitpy auto' para o modo automático.",
     "option_debug_help": "Deep Trace: Ativa o rastreamento profundo de payloads e respostas em .vibe-debug.log.",
@@ -147,7 +149,8 @@
     "menu_branch_action_create_switch": "Criar e trocar",
     "menu_branch_action_switch": "Trocar para branch existente",
     "menu_branch_action_validate": "Validar nome de branch",
-    "menu_branch_action_back": "Voltar ao menu principal",
+    "menu_action_back": "↩ Voltar",
+    "menu_auto_back": "↩ Voltar ao menu anterior",
     "menu_branch_current_title": "Branch Atual",
     "menu_branch_list_title": "Branches",
     "menu_branch_list_empty": "Nenhuma branch encontrada.",

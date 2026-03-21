@@ -27,6 +27,7 @@ from rich.panel import Panel
 
 from vibe_core import kernel
 from i18n import t
+from navigation_stack import get_nav_stack
 
 
 class MenuDependencyError(RuntimeError):
@@ -237,13 +238,21 @@ def _render_menu_header(subtitle_key: str = "menu_subtitle_main", repo_status: O
         style="bold #c084fc",
     )
     subtitle = Text(f"  {t(subtitle_key)}", style="bold #22d3ee")
+
+    # Breadcrumb da pilha de navegação
+    nav_stack = get_nav_stack()
+    breadcrumb_text = ""
+    if not nav_stack.is_empty():
+        breadcrumb = nav_stack.get_breadcrumb(t("breadcrumb_separator"))
+        breadcrumb_text = f"\n  [dim cyan]📍 {breadcrumb}[/dim cyan]"
+
     repo_line = Text(
         f"\n  {repo_status}",
         style="bold #facc15",
     ) if repo_status else Text("")
     version = Text("GitPy v1.0", style="bold #a78bfa")
 
-    body = Text.assemble(logo, subtitle, repo_line)
+    body = Text.assemble(logo, subtitle, Text(breadcrumb_text), repo_line)
     panel = Panel(
         body,
         title=version,
@@ -336,6 +345,7 @@ def _collect_auto_options_from_menu(ctx: typer.Context) -> AutoOptions:
         choices=[
             {"name": t("menu_path_mode_current", path=default_path), "value": "current"},
             {"name": t("menu_path_mode_custom"), "value": "custom"},
+            {"name": t("menu_auto_back"), "value": "back"},
         ],
         default="current",
         pointer="❯",
@@ -344,25 +354,45 @@ def _collect_auto_options_from_menu(ctx: typer.Context) -> AutoOptions:
         cycle=True,
     )
 
+    if path_mode == "back":
+        return None
+
     if path_mode == "custom":
         chosen_path = _inquirer_text(
             t("menu_prompt_path_custom"),
             default=default_path,
         ).strip()
+        if chosen_path.lower() == "back":
+            return None
     else:
         chosen_path = default_path
 
     model = _inquirer_select(
         t("menu_prompt_model"),
-        choices=model_choices,
+        choices=[
+            {"name": "auto", "value": "auto"},
+            {"name": "openrouter", "value": "openrouter"},
+            {"name": "groq", "value": "groq"},
+            {"name": "openai", "value": "openai"},
+            {"name": "gemini", "value": "gemini"},
+            {"name": "ollama", "value": "ollama"},
+            {"name": t("menu_auto_back"), "value": "back"},
+        ],
         default=default_model,
         pointer="❯",
         qmark="⚙",
         amark="✓",
         cycle=True,
     )
+
+    if model == "back":
+        return None
     message = _inquirer_text(t("menu_prompt_message"), default="").strip()
+    if message.lower() == "back":
+        return None
     branch = _inquirer_text(t("menu_prompt_branch"), default="").strip()
+    if branch.lower() == "back":
+        return None
 
     options = AutoOptions(
         wip=_inquirer_confirm(
@@ -406,13 +436,14 @@ def _collect_auto_options_from_menu(ctx: typer.Context) -> AutoOptions:
     return options
 
 
-def _collect_reset_options_from_menu() -> ResetOptions:
+def _collect_reset_options_from_menu() -> Optional[ResetOptions]:
     mode = _inquirer_select(
         t("menu_reset_mode_prompt"),
         choices=[
             {"name": t("menu_reset_mode_summary"), "value": "summary"},
             {"name": t("menu_reset_mode_dry_run"), "value": "dry_run"},
             {"name": t("menu_reset_mode_full"), "value": "full"},
+            {"name": t("menu_action_back"), "value": "back"},
         ],
         default="summary",
         pointer="❯",
@@ -420,6 +451,10 @@ def _collect_reset_options_from_menu() -> ResetOptions:
         amark="✓",
         cycle=True,
     )
+
+    if mode == "back":
+        return None
+
     quiet = _inquirer_confirm(
         t("menu_reset_quiet_prompt"),
         default=False,
@@ -428,10 +463,15 @@ def _collect_reset_options_from_menu() -> ResetOptions:
     return ResetOptions(mode=mode, quiet=quiet)
 
 
-def _run_git_reset_resource(ctx: typer.Context) -> None:
+def _run_git_reset_resource(ctx: typer.Context) -> bool:
+    """Retorna True se executou uma ação, False se usuário voltou."""
     console = Console()
     repo_path = _resolve_repo_path(ctx)
     options = _collect_reset_options_from_menu()
+
+    if options is None:
+        # Usuário escolheu voltar
+        return False
 
     if options.mode == "full":
         danger_ack = _inquirer_text(
@@ -439,9 +479,11 @@ def _run_git_reset_resource(ctx: typer.Context) -> None:
             default="",
             qmark="⚠",
         ).strip()
+        if danger_ack.lower() == "back":
+            return False
         if danger_ack.upper() != "RESET":
             console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
-            return
+            return True
 
     reset_script = os.path.join(app_dir, "git_reset_to_github.py")
     command = [sys.executable, reset_script]
@@ -466,6 +508,7 @@ def _run_git_reset_resource(ctx: typer.Context) -> None:
         console.print(f"[bold green]{t('menu_reset_done_success')}[/bold green]")
     else:
         console.print(f"[bold red]{t('menu_reset_done_fail')} (exit={result.returncode})[/bold red]")
+    return True
 
 
 def _show_gitpy_resources() -> None:
@@ -531,7 +574,7 @@ def _run_branch_center(ctx: typer.Context) -> None:
                 {"name": t("menu_branch_action_create_switch"), "value": "create_switch"},
                 {"name": t("menu_branch_action_switch"), "value": "switch"},
                 {"name": t("menu_branch_action_validate"), "value": "validate"},
-                {"name": t("menu_branch_action_back"), "value": "back"},
+                {"name": t("menu_action_back"), "value": "back"},
             ],
             default="current",
             pointer="❯",
@@ -588,6 +631,9 @@ def _run_branch_center(ctx: typer.Context) -> None:
             default="",
             qmark="🌿",
         ).strip()
+
+        if branch_name.lower() == "back":
+            continue
 
         validation = run_async(
             kernel.run(
@@ -689,6 +735,12 @@ def _run_menu_mode(ctx: typer.Context) -> None:
         raise typer.Exit(1)
 
     console = Console()
+    nav_stack = get_nav_stack()
+
+    # Inicializa pilha com Raiz se estiver vazia
+    if nav_stack.is_empty():
+        nav_stack.push("root", "menu_subtitle_main", t("breadcrumb_root"))
+
     while True:
         _render_menu_header(repo_status=_get_menu_repo_status(ctx))
         action = _inquirer_select(
@@ -709,36 +761,53 @@ def _run_menu_mode(ctx: typer.Context) -> None:
         )
 
         if action == "exit":
+            nav_stack.clear()
             console.print(f"[yellow]{t('menu_goodbye')}[/yellow]")
             return
 
         if action == "branch":
+            nav_stack.push("branch", "menu_subtitle_branch", t("menu_subtitle_branch"))
             _run_branch_center(ctx)
+            nav_stack.pop()
             continue
 
         if action == "check_ai":
+            nav_stack.push("check_ai", "menu_subtitle_diag", t("menu_subtitle_diag"))
             _render_menu_header("menu_subtitle_diag", repo_status=_get_menu_repo_status(ctx))
             console.print(f"[cyan]{t('menu_running_check_ai')}[/cyan]")
             _run_check_ai_diagnostics()
+            nav_stack.pop()
             _pause_menu()
             continue
 
         if action == "reset":
+            nav_stack.push("reset", "menu_subtitle_reset", t("menu_subtitle_reset"))
             _render_menu_header("menu_subtitle_reset", repo_status=_get_menu_repo_status(ctx))
-            _run_git_reset_resource(ctx)
-            _pause_menu()
+            user_completed = _run_git_reset_resource(ctx)
+            nav_stack.pop()
+            if user_completed:
+                _pause_menu()
             continue
 
         if action == "resources":
+            nav_stack.push("resources", "menu_subtitle_resources", t("menu_subtitle_resources"))
             _render_menu_header("menu_subtitle_resources", repo_status=_get_menu_repo_status(ctx))
             _show_gitpy_resources()
+            nav_stack.pop()
             _pause_menu()
             continue
 
+        # action == auto
+        nav_stack.push("auto", "menu_subtitle_auto", t("menu_subtitle_auto"))
         _render_menu_header("menu_subtitle_auto", repo_status=_get_menu_repo_status(ctx))
         options = _collect_auto_options_from_menu(ctx)
+        if options is None:
+            # Usuário escolheu voltar
+            nav_stack.pop()
+            continue
         console.print(f"[cyan]{t('menu_running_auto')}[/cyan]")
         _run_auto_with_guards(ctx, options, confirm_fn=_menu_confirm)
+        nav_stack.pop()
         _pause_menu()
 
 
