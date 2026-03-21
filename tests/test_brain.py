@@ -24,6 +24,24 @@ process = ai_brain.process
 
 class TestAiBrain(unittest.TestCase):
 
+    def test_normalize_commit_preserves_theme_bullets(self):
+        raw = "feat: improve pipeline\n- feat add context coverage\n- fix prevent generic fallback\n- refactor simplify prompt"
+        normalized = ai_brain._normalize_commit_message(raw, "en")
+
+        self.assertIn("feat: improve pipeline", normalized)
+        self.assertIn("- x add context coverage", normalized)
+        self.assertIn("- b prevent generic fallback", normalized)
+        self.assertIn("- t simplify prompt", normalized)
+
+    def test_build_diff_context_uses_head_middle_tail(self):
+        long_diff = "A" * 5200 + "M" * 4000 + "Z" * 5200
+        context = ai_brain._build_diff_context(long_diff)
+
+        self.assertIn("A" * 100, context)
+        self.assertIn("M" * 100, context)
+        self.assertIn("Z" * 100, context)
+        self.assertIn("[SNIP: middle context omitted for brevity]", context)
+
     @patch("vibe_core.kernel.run", new_callable=AsyncMock)
     async def test_brain_flow(self, mock_kernel):
         """
@@ -46,7 +64,10 @@ class TestAiBrain(unittest.TestCase):
         result = await process(payload)
 
         self.assertTrue(result["success"])
-        self.assertEqual(result["commit_message"], "feat: meu commit")
+        self.assertEqual(
+            result["commit_message"],
+            "feat: meu commit\n\n- t details unavailable",
+        )
         self.assertEqual(mock_kernel.call_count, 3)
 
         # Verifica chamadas
@@ -76,7 +97,10 @@ class TestAiBrain(unittest.TestCase):
         try:
             result = await process(payload)
             self.assertTrue(result["success"])
-            self.assertEqual(result["commit_message"], "fix: bug")
+            self.assertEqual(
+                result["commit_message"],
+                "fix: bug\n\n- t details unavailable",
+            )
         except Exception:
             pass
 

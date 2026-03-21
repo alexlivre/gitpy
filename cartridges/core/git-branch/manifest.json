@@ -4,6 +4,7 @@
     "description": "Git branch management cartridge for GitPy",
     "author": "GitPy Team",
     "type": "core",
+    "sidecar": "none",
     "dependencies": [],
     "permissions": [
         "git_read",

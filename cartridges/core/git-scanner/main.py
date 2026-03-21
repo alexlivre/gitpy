@@ -32,7 +32,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     cid = payload.get("cid", "unknown")
 
     if not repo_path or not os.path.isdir(repo_path):
-        return {"is_repo": False, "error": "NOT_DIR"}
+        return {"is_repo": False, "error": "NOT_DIR", "cid": cid}
 
     try:
         # 1. Verifica se é repo Git
@@ -101,5 +101,6 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "is_repo": True,
             "error": "SCAN_FAIL",
-            "message": str(e)
+            "message": str(e),
+            "cid": cid
         }

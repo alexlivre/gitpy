@@ -3,7 +3,8 @@
         "name": "ai-groq",
         "version": "1.0.0",
         "description": "Adapter LLM: Groq (Llama 4 / Mixtral). Infraestrutura de ultra-baixa latência.",
-        "ai_role": "Velocista. Conecta-se à LPU (Language Processing Unit) da Groq para gerar commits em milissegundos usando modelos Open Source como Llama 4."
+        "ai_role": "Velocista. Conecta-se à LPU (Language Processing Unit) da Groq para gerar commits em milissegundos usando modelos Open Source como Llama 4.",
+        "sidecar": "none"
     },
     "io_contract": {
         "input_schema": {

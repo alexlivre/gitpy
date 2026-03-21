@@ -119,32 +119,25 @@ class TestLocalIntegration(unittest.TestCase):
         self.assertIn("OPENAI", result.stdout)
 
     @patch("launcher._run_auto_with_guards")
-    @patch("launcher._inquirer_confirm")
-    @patch("launcher._inquirer_text")
-    @patch("launcher._inquirer_select")
+    @patch("launcher_menu._inquirer_checkbox")
+    @patch("launcher_menu._inquirer_text")
+    @patch("launcher_menu._inquirer_select")
     @patch("launcher._is_interactive_terminal", return_value=True)
     def test_menu_auto_dispatches_options(
         self,
         _mock_tty,
         mock_select,
         mock_text,
-        mock_confirm,
+        mock_checkbox,
         mock_run_auto,
     ):
         """Test gitpy menu -> Auto wizard passes all options."""
-        mock_select.side_effect = ["auto", "current", "groq", "exit"]  # main action, path mode, model, return -> exit
+        mock_select.side_effect = ["auto", "current", "groq"]  # main action, path mode, model (no exit because auto flow should complete)
         mock_text.side_effect = [
             "menu hint",             # message
             "feature/menu-flow",     # branch
         ]
-        mock_confirm.side_effect = [
-            True,   # wip
-            True,   # dry_run
-            False,  # no_push
-            True,   # nobuild
-            True,   # debug
-            False,  # yes
-        ]
+        mock_checkbox.return_value = ["dry_run", "nobuild", "debug"]  # Selected boolean options
 
         runner = CliRunner()
         result = runner.invoke(app, ["--path", self.test_dir, "menu"])
@@ -164,7 +157,6 @@ class TestLocalIntegration(unittest.TestCase):
 
         self.assertEqual(called_ctx.obj.get("path"), self.test_dir)
         self.assertIsInstance(called_options, launcher.AutoOptions)
-        self.assertTrue(called_options.wip)
         self.assertTrue(called_options.dry_run)
         self.assertFalse(called_options.no_push)
         self.assertTrue(called_options.nobuild)
@@ -176,7 +168,7 @@ class TestLocalIntegration(unittest.TestCase):
         self.assertTrue(callable(called_confirm))
 
     @patch("launcher._run_check_ai_diagnostics")
-    @patch("launcher._inquirer_select")
+    @patch("launcher_menu._inquirer_select")
     @patch("launcher._is_interactive_terminal", return_value=True)
     def test_menu_check_ai_runs_diagnostics(
         self,
@@ -191,9 +183,9 @@ class TestLocalIntegration(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         mock_diagnostics.assert_called_once()
 
-    @patch("launcher.subprocess.run")
-    @patch("launcher._inquirer_confirm", return_value=False)
-    @patch("launcher._inquirer_select")
+    @patch("subprocess.run")
+    @patch("launcher_menu._inquirer_confirm", return_value=False)
+    @patch("launcher_menu._inquirer_select")
     @patch("launcher._is_interactive_terminal", return_value=True)
     def test_menu_reset_runs_git_reset_script(
         self,
@@ -221,7 +213,7 @@ class TestLocalIntegration(unittest.TestCase):
         self.assertEqual(cwd, self.test_dir)
 
     @patch("launcher._run_branch_center")
-    @patch("launcher._inquirer_select")
+    @patch("launcher_menu._inquirer_select")
     @patch("launcher._is_interactive_terminal", return_value=True)
     def test_menu_branch_center_dispatches(
         self,

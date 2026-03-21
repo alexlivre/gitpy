@@ -11,6 +11,7 @@
 | Feature | Description |
 | :--- | :--- |
 | **🧠 AI Brain** | Analyzes your diffs and writes semantic commit messages (Conventional Commits). |
+| **🔄 Regenerate Messages** | **NEW!** Regenerate commit messages interactively until you're satisfied. |
 | **🥷 Stealth Mode** | **NEW!** Temporarily hides private files (e.g., AI agents) during execution without cluttering `.gitignore`. |
 | **🚑 Git Healer** | Detects push errors (conflicts, rejects) and **automatically fixes** them using AI. |
 | **🤖 Auto Mode** | `gitpy auto --yes` takes total control (scan → commit → push) without questions. |
@@ -46,8 +47,12 @@ The launcher will start the intelligent automation process:
 1.  **Stealth Stash:** Hides your private files (`.gitpy-private`).
 2.  **Scanner:** Checks for changes and suggests additions to `.gitignore`.
 3.  **Think:** Analyzes the code with AI and generates the commit.
-4.  **Act:** Performs the commit and secure push.
-5.  **Restore:** Returns your private files to their place.
+4.  **Review:** Shows you the generated commit message with options to:
+    - **Execute** - Proceed with the current message
+    - **Regenerate** - Ask AI for a new message (repeat as needed)
+    - **Cancel** - Abort the operation
+5.  **Act:** Performs the commit and secure push.
+6.  **Restore:** Returns your private files to their place.
 
 ### Interactive Menu Mode (NEW!)
 
@@ -66,7 +71,7 @@ gitpy menu
 ```
 
 Menu coverage:
-- `Auto` wizard exposes all current options: `path`, `model`, `message`, `branch`, `wip`, `dry_run`, `no_push`, `nobuild`, `debug`, `yes`.
+- `Auto` wizard exposes all current options: `path`, `model`, `message`, `branch`, `dry_run`, `no_push`, `nobuild`, `debug`, `yes`.
 - `Branch Center` now includes branch-specific operations: current branch, list local/remote, validate name, create+switch, and switch existing branch.
 - `Check AI` runs the same diagnostics flow as `python launcher.py check-ai`.
 - `Reset Repository` opens `git_reset_to_github.py` in guided modes (`summary`, `dry-run`, `full reset`).
@@ -108,15 +113,39 @@ python launcher.py auto --yes --branch test --no-push --nobuild
 
 ### Flags and Options
 
-| Flag | Shortcut | Function |
-| :--- | :--- | :--- |
-| `--yes` | `-y` | **Automatic Confirmation:** Accepts everything without asking. |
-| `--dry-run` | | **Simulation:** Shows what would be done, without executing Git. |
-| `--no-push` | | **Local Commit:** Performs the commit but doesn't send to remote. |
-| `--nobuild` | | **Skip Deploy:** Adds `[CI Skip]` to the message to avoid auto-deploy. **NEW!** |
-| `--branch <name>` | `-b` | **Test Branch:** Creates/uses a test branch for operations. **NEW!** |
-| `--message "..."` | `-m` | **Context Hint:** Guides the AI (e.g., `-m "fix login"`). |
-| `--model <name>` | | **Choose Provider:** Selects the AI (openrouter, groq, openai, gemini, ollama). Overrides `AI_PROVIDER` from `.env`. |
+| Flag | Shortcut | Function | Usage Example |
+| :--- | :--- | :--- | :--- |
+| `--yes` | `-y` | **Automatic Confirmation:** Accepts everything without asking, enabling fully autonomous execution. | `gitpy auto --yes` |
+| `--dry-run` | | **Simulation:** Shows what would be done without executing any Git commands. Useful to verify actions before confirming. | `gitpy auto --dry-run` |
+| `--no-push` | | **Local Commit:** Performs the commit but doesn't send to remote. Ideal for work-in-progress commits or when you want to group multiple commits before pushing. | `gitpy auto --yes --no-push` |
+| `--nobuild` | | **Skip Deploy:** Adds `[CI Skip]` to the message to avoid auto-deploy on CI/CD systems. Saves build quota. | `gitpy auto --yes --nobuild` |
+| `--branch <name>` | `-b` | **Test Branch:** Creates or uses a specific branch for operations. If branch doesn't exist, it will be created automatically. Useful for isolated work. | `gitpy auto --yes --branch feature-test` |
+| `--message "..."` | `-m` | **Context Hint:** Provides a context hint for AI to generate a more specific commit message. Ex: `-m "fix login"` directs AI to focus on login fixes. | `gitpy auto -m "fix login bug"` |
+| `--model <name>` | | **Choose Provider:** Manually selects AI provider (auto, openrouter, groq, openai, gemini, ollama). Overrides `AI_PROVIDER` from `.env`. | `gitpy auto --model groq` |
+| `--debug` | | **Deep Trace:** Enables advanced diagnostic mode, saving AI payloads and responses to `.vibe-debug.log`. Essential for debugging integration issues. | `gitpy --debug auto` |
+| `--path <dir>` | `-p` | **Target:** Sets target directory for GitPy execution. Allows operating on repositories different from current directory. | `gitpy --path /path/to/repo auto` |
+
+#### Practical Combined Examples:
+
+```bash
+# Full autonomous flow
+gitpy auto --yes
+
+# Local commit for work-in-progress
+gitpy auto --yes --no-push
+
+# Test changes in isolated branch without deploy
+gitpy auto --yes --branch experiment --nobuild --no-push
+
+# Simulate to see what would happen
+gitpy auto --dry-run
+
+# Commit with specific context using specific AI
+gitpy auto --yes -m "refactor auth" --model openai
+
+# Debug AI integration issues
+gitpy --debug auto --model groq
+```
 
 ### 🛠️ Diagnostic Commands
 **NEW!** GitPy now allows you to test the health of your AI configuration:
@@ -134,6 +163,44 @@ _(Use these flags before or after `auto`)_
 | :--- | :--- | :--- |
 | `--debug` | | **Deep Trace:** Enables deep payload tracking in `.vibe-debug.log`. |
 | `--path <dir>` | `-p` | **Target:** Runs GitPy in another directory. |
+
+---
+
+## 🔄 Message Regeneration (NEW!)
+
+**NEW!** GitPy now allows you to regenerate commit messages interactively until you're satisfied with the result.
+
+### How it works:
+After the AI generates a commit message, GitPy presents you with three options:
+
+1. **Execute Commit** - Proceed with the current message
+2. **Generate New Message** - Ask the AI to create a different message
+3. **Cancel Operation** - Abort the process
+
+### Usage Flow:
+```bash
+# Run the auto command
+gitpy auto
+
+# GitPy will:
+# 1. Analyze your changes
+# 2. Generate initial commit message
+# 3. Show you the message with options
+# 4. Wait for your choice
+# 5. If you choose "regenerate", repeat from step 2
+# 6. If you choose "execute", perform the commit
+```
+
+### Benefits:
+- **Perfect Messages**: Keep regenerating until you get the perfect commit message
+- **No More Frustration**: Never get stuck with a poorly generated message
+- **Iterative Process**: Multiple attempts with the same context
+- **Full Control**: You decide when the message is good enough
+
+### Compatibility:
+- **With --yes**: Automatically executes without asking (preserves autonomous workflow)
+- **Without --yes**: Shows the interactive menu with all three options
+- **Fallback**: If InquirerPy is not available, uses simple yes/no confirmation
 
 ---
 

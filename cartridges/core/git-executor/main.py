@@ -80,14 +80,15 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     cid = payload.get("cid", "unknown")
 
     if not repo_path or not command:
-        return {"success": False, "error": "Parâmetros 'repo_path' e 'command' são obrigatórios."}
+        return {"success": False, "error": "MISSING_ARGS", "message": "Parâmetros 'repo_path' e 'command' são obrigatórios.", "cid": cid}
 
     # 1. Validação de Segurança (Whitelist)
     if not validate_command(command):
         return {
             "success": False,
             "error": "CMD_BLOCKED",
-            "message": f"O comando 'git {command}' foi bloqueado pela política de segurança."
+            "message": f"O comando 'git {command}' foi bloqueado pela política de segurança.",
+            "cid": cid
         }
 
     full_cmd = f"git {command}"
@@ -129,6 +130,6 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     except FileNotFoundError:
-        return {"success": False, "error": "GIT_NOT_FOUND", "message": "Executável 'git' não encontrado no PATH."}
+        return {"success": False, "error": "GIT_NOT_FOUND", "message": "Executável 'git' não encontrado no PATH.", "cid": cid}
     except Exception as e:
-        return {"success": False, "error": "EXEC_FAIL", "message": str(e)}
+        return {"success": False, "error": "EXEC_FAIL", "message": str(e), "cid": cid}

@@ -3,7 +3,8 @@
         "name": "ai-style",
         "version": "1.0.0",
         "description": "Motor de Estilo Adaptativo (The Chameleon): analisa histórico e define estilo.",
-        "ai_role": "Camaleão de estilo. Analisa o histórico de commits anteriores para instruir o Brain a imitar o padrão do time (emojis, conventional commits, idioma)."
+        "ai_role": "Camaleão de estilo. Analisa o histórico de commits anteriores para instruir o Brain a imitar o padrão do time (emojis, conventional commits, idioma).",
+        "sidecar": "none"
     },
     "io_contract": {
         "input_schema": {

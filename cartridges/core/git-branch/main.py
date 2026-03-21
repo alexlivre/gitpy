@@ -91,21 +91,21 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     cid = payload.get("cid", "unknown")
     
     if not repo_path or not os.path.isdir(repo_path):
-        return {"success": False, "error": "Caminho do repositório inválido."}
+        return {"success": False, "error": "INVALID_PATH", "message": "Caminho do repositório inválido.", "cid": cid}
     
     if not action:
-        return {"success": False, "error": "Ação não especificada."}
+        return {"success": False, "error": "MISSING_ACTION", "message": "Ação não especificada.", "cid": cid}
     
     try:
         # Verifica se estamos em um repositório Git
         run_git_cmd(["rev-parse", "--is-inside-work-tree"], repo_path)
     except Exception as e:
-        return {"success": False, "error": f"Não é um repositório Git: {str(e)}"}
+        return {"success": False, "error": "NOT_GIT_REPO", "message": f"Não é um repositório Git: {str(e)}", "cid": cid}
     
     try:
         if action == "validate":
             if not branch_name:
-                return {"success": False, "error": "Nome da branch não fornecido para validação."}
+                return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido para validação.", "cid": cid}
             
             validation = validate_branch_name(branch_name)
             return {
@@ -138,7 +138,7 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         
         elif action == "exists":
             if not branch_name:
-                return {"success": False, "error": "Nome da branch não fornecido."}
+                return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
             
             try:
                 # Lista todas as branches (locais e remotas)
@@ -161,18 +161,20 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
                     "branches": branch_list
                 }
             except Exception as e:
-                return {"success": False, "error": f"Erro ao verificar branches: {str(e)}"}
+                return {"success": False, "error": "BRANCH_CHECK_FAIL", "message": f"Erro ao verificar branches: {str(e)}", "cid": cid}
         
         elif action == "create":
             if not branch_name:
-                return {"success": False, "error": "Nome da branch não fornecido."}
+                return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
             
             # Primeiro valida o nome
             validation = validate_branch_name(branch_name)
             if not validation["valid"]:
                 return {
                     "success": False,
-                    "error": f"Nome de branch inválido: {validation['error']}"
+                    "error": "INVALID_BRANCH_NAME",
+                    "message": f"Nome de branch inválido: {validation['error']}",
+                    "cid": cid
                 }
             
             try:
@@ -197,11 +199,11 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
                     "message": f"Branch '{branch_name}' criada com sucesso."
                 }
             except Exception as e:
-                return {"success": False, "error": f"Erro ao criar branch: {str(e)}"}
+                return {"success": False, "error": "BRANCH_CREATE_FAIL", "message": f"Erro ao criar branch: {str(e)}", "cid": cid}
         
         elif action == "switch":
             if not branch_name:
-                return {"success": False, "error": "Nome da branch não fornecido."}
+                return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
             
             try:
                 # Verifica se a branch existe
@@ -225,11 +227,11 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
                     "message": f"Alternado para branch '{branch_name}'."
                 }
             except Exception as e:
-                return {"success": False, "error": f"Erro ao alternar branch: {str(e)}"}
+                return {"success": False, "error": "BRANCH_SWITCH_FAIL", "message": f"Erro ao alternar branch: {str(e)}", "cid": cid}
         
         else:
-            return {"success": False, "error": f"Ação '{action}' não suportada."}
+            return {"success": False, "error": "UNSUPPORTED_ACTION", "message": f"Ação '{action}' não suportada.", "cid": cid}
     
     except Exception as e:
         logger.error(f"Erro em git-branch: {str(e)}")
-        return {"success": False, "error": f"Erro inesperado: {str(e)}"}
+        return {"success": False, "error": "UNEXPECTED_ERROR", "message": f"Erro inesperado: {str(e)}", "cid": cid}

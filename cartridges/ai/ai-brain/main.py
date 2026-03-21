@@ -2,9 +2,90 @@
 Central module for ai-brain functionality.
 """
 import os
+import re
 from typing import Any, Dict
 
 from vibe_core import kernel
+
+
+_CATEGORY_MAP = {
+    "x": "x",
+    "feat": "x",
+    "feature": "x",
+    "enhancement": "x",
+    "improvement": "x",
+    "melhoria": "x",
+    "b": "b",
+    "fix": "b",
+    "bugfix": "b",
+    "bug": "b",
+    "hotfix": "b",
+    "correcao": "b",
+    "correção": "b",
+    "t": "t",
+    "update": "t",
+    "chore": "t",
+    "refactor": "t",
+    "atualizacao": "t",
+    "atualização": "t",
+}
+
+_MAX_DIFF_CONTEXT = 12000
+
+
+def _build_diff_context(diff_text: str) -> str:
+    if len(diff_text) <= _MAX_DIFF_CONTEXT:
+        return diff_text
+
+    head = diff_text[:5000]
+    middle_start = max((len(diff_text) // 2) - 1000, 0)
+    middle_end = middle_start + 2000
+    middle = diff_text[middle_start:middle_end]
+    tail = diff_text[-5000:]
+
+    return (
+        f"{head}\n"
+        "\n... [SNIP: middle context omitted for brevity] ...\n\n"
+        f"{middle}\n"
+        "\n... [SNIP: tail context follows] ...\n\n"
+        f"{tail}"
+    )
+
+
+def _normalize_commit_message(raw_text: str, commit_lang: str) -> str:
+    clean = raw_text.replace("```", "").replace("commit:", "").strip()
+    lines = [line.strip() for line in clean.splitlines() if line.strip()]
+
+    if not lines:
+        fallback = "update: general changes" if "en" in commit_lang else "update: ajustes gerais"
+        fallback_detail = "details unavailable" if "en" in commit_lang else "detalhes não informados"
+        return f"{fallback}\n\n- t {fallback_detail}"
+
+    title = lines[0][:50].strip()
+    body_lines = lines[1:]
+
+    normalized_body = []
+    for line in body_lines:
+        line = re.sub(r"^[\-*•]\s*", "", line).strip()
+        if not line:
+            continue
+
+        match = re.match(r"^(x|b|t|feat|feature|enhancement|improvement|melhoria|fix|bugfix|bug|hotfix|correcao|correção|update|chore|refactor|atualizacao|atualização)\s*[:\-]?\s*(.+)$", line, flags=re.IGNORECASE)
+        if match:
+            marker = _CATEGORY_MAP.get(match.group(1).lower(), "t")
+            content = match.group(2).strip()
+        else:
+            marker = "t"
+            content = line
+
+        if content:
+            normalized_body.append(f"- {marker} {content}")
+
+    if not normalized_body:
+        fallback_detail = "details unavailable" if "en" in commit_lang else "detalhes não informados"
+        normalized_body = [f"- t {fallback_detail}"]
+
+    return f"{title}\n\n" + "\n".join(normalized_body)
 
 
 async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -45,26 +126,38 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     lang_instruction = "English (en-US)" if "en" in commit_lang else "Português Brasileiro (pt-BR)"
     
     system_prompt = f"""Você é um Assistente DevOps Sênior.
-Sua missão é escrever mensagens de commit Git claras, concisas e úteis.
+Sua missão é escrever mensagens de commit Git claras, detalhadas e úteis.
 {style_guide}
 
 Regras:
 - Título curto (max 50 chars).
-- Corpo explicativo (se necessário).
+- Sempre incluir corpo explicativo em bullet list.
+- Cobrir as mudanças relevantes por tema, evitando omitir melhorias e atualizações importantes.
+- Usar quantos bullets forem necessários para representar os temas principais.
+- Cada bullet deve começar EXATAMENTE com um marcador de categoria:
+  - x = melhoria (feature/enhancement)
+  - b = correção (bugfix)
+  - t = atualização técnica (update/refactor/chore)
+- Formato obrigatório do corpo:
+  - x <descrição objetiva>
+  - b <descrição objetiva>
+  - t <descrição objetiva>
 - Responda APENAS a mensagem do commit.
 - Idioma das mensagens: {lang_instruction}.
 """
     is_truncated = payload.get("is_truncated", False)
     if is_truncated:
-        system_prompt += "\nATENÇÃO: O diff foi truncado por ser muito extenso. Baseie-se no preview disponível e gere uma mensagem genérica sobre a alteração em massa."
+        system_prompt += "\nATENÇÃO: O diff é extenso. Gere mensagem detalhada e abrangente por temas, sem usar resumo genérico."
+
+    diff_context = _build_diff_context(safe_diff)
 
     user_prompt = f"""Gere um commit para as seguintes alterações:
 ---
-{safe_diff[:3000]} 
+{diff_context}
 ---
 """
-    if len(safe_diff) > 3000:
-        user_prompt += "\n(Diff truncado por limite de tokens...)"
+    if len(safe_diff) > _MAX_DIFF_CONTEXT:
+        user_prompt += "\n(Diff extenso: enviado em recortes para maximizar cobertura temática.)"
 
     if hint:
         user_prompt += f"\nDica do desenvolvedor: '{hint}'"
@@ -96,19 +189,7 @@ Regras:
 
         raw_text = llm_res.get("text", "").strip()
 
-        # Parsing de Exclusão e Remoção
-        excluded_files = []
-        removed_files = []
-        commit_msg_lines = []
-
-        for line in raw_text.splitlines():
-            commit_msg_lines.append(line)
-
-        generated_msg = "\n".join(commit_msg_lines).strip()
-
-        # Limpeza básica pós-IA
-        generated_msg = generated_msg.replace(
-            "```", "").replace("commit:", "").strip()
+        generated_msg = _normalize_commit_message(raw_text, commit_lang)
 
         return {
             "success": True,

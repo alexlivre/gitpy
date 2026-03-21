@@ -5,6 +5,7 @@
     "description": "Gerencia o arquivo .gitignore, adicionando padrões e sugerindo regras para arquivos lixo.",
     "version": "1.0.0",
     "ai_role": "Ignore Specialist",
+    "sidecar": "none",
     "permissions": [
         "read_fs",
         "write_fs"
