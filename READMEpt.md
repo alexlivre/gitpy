@@ -2,114 +2,200 @@
 
 > **"Ele não apenas versiona. Ele Entende, Protege, Automatiza e Cura."**
 
-**GitPy** é uma CLI de última geração que transforma seu fluxo de trabalho Git. Construído na **Vibe Architecture** (um sistema modular de cartuchos plugáveis) e alimentado por IA (atualmente via **Groq**), ele age como um engenheiro DevOps sênior trabalhando com você em tempo real.
+**GitPy** é uma CLI de última geração que transforma seu fluxo de trabalho Git. Construído na **Vibe Architecture** (um sistema modular de cartuchos plugáveis) e alimentado por IA (atualmente via **Groq**, **OpenAI**, **Gemini**, **Ollama**, **OpenRouter**), ele age como um engenheiro DevOps sênior trabalhando com você em tempo real.
 
 ---
 
-## 🌟 Destaques
+## 🚀 Início Rápido
 
-| Funcionalidade | Descrição |
-| :--- | :--- |
-| **🧠 Cérebro IA** | Analisa seus diffs e escreve mensagens de commit semânticas (Conventional Commits). |
-| **🔄 Regenerar Mensagens** | **NOVO!** Regenera mensagens de commit interativamente até ficar satisfeito. |
-| **🥷 Stealth Mode** | **NOVO!** Oculta temporariamente arquivos privados (ex: agentes IA) durante execução sem poluir `.gitignore`. |
-| **🚑 Git Healer** | Detecta erros de push (conflitos, rejeições) e **corrige automaticamente** usando IA. |
-| **🤖 Modo Auto** | `gitpy auto --yes` assume controle total (scan → commit → push) sem perguntas. |
-| **🏗️ Skip Deploy** | **NOVO!** Use `--nobuild` para adicionar `[CI Skip]` e evitar deployments automáticos. |
-| **🛡️ Muralha de Chumbo** | Impede que chaves de API, senhas (`.env`) e arquivos sensíveis sejam commitados. |
-| **📦 Vibe Vault** | Detecta diffs gigantes (>100KB) e resume automaticamente para a IA processar. |
-| **🧹 Smart Ignore** | Verifica proativamente `.gitignore` antes de cada commit e sugere limpeza. |
-| **🛠️ Deep Trace** | **NOVO!** Captura payloads e respostas brutas da IA em `.vibe-debug.log` para debug profundo. |
-| **⚙️ Config Modular** | **NOVO!** Lista de arquivos ignoráveis editável via `common_trash.json`. |
-| **🎯 Smart Whitelist** | **NOVO!** Exceções personalizadas via comentários no `.gitignore`. |
-| **🔒 .Env Security** | **NOVO!** Bloqueio de segurança inquebrável para proteger `.env`. |
-| **🧪 AI Diagnostics** | **NOVO!** Comando `check-ai` para testar chaves e conectividade. |
-| **🚀 Multi-Provider** | **NOVO!** Suporte nativo para **OpenRouter** e **OpenAI GPT-5**. |
-| **🌍 Multi-Language** | **NOVO!** Suporte i18n (Inglês/Português) para interface e commits. |
-| **🌿 Modo Branch de Teste** | **NOVO!** Crie/use branches de teste com flag `--branch` para operações seguras. |
-| **🏷️ Central de Tags** | **NOVO!** Gerenciamento completo de tags com confirmação forte para operações destrutivas. |
-
----
-
-## 🎮 Guia de Uso: O Único Comando
-
-GitPy foi projetado para ser "Zero Config". O comando principal é:
+### Configuração Zero Requerida
 
 ```bash
+# Instale dependências
+pip install -r requirements.txt
+
+# Configure seu provedor de IA (copie .env.example para .env)
+cp .env.example .env
+# Edite .env com suas chaves de API
+
+# Execute modo autônomo
+python launcher.py auto --yes
+```
+
+> **Um Comando para Tudo**: GitPy automaticamente escaneia, analisa, comita e envia suas mudanças com mensagens de commit semânticas.
+
+---
+
+## 🏗️ Visão Geral da Arquitetura
+
+### A Vibe Architecture
+
+GitPy usa um sistema modular de cartuchos onde cada funcionalidade é um componente isolado:
+
+```
+GitPy Core (vibe_core.py)
+├── 🧠 Cartuchos de IA
+│   ├── ai-brain      → Geração de mensagens de commit
+│   ├── ai-groq       → Integração com API Groq
+│   ├── ai-openai     → Integração com OpenAI GPT
+│   ├── ai-gemini     → Integração com Google Gemini
+│   ├── ai-ollama     → Integração com Ollama local
+│   └── ai-openrouter → Integração com OpenRouter API
+├── ⚙️ Cartuchos Core
+│   ├── git-scanner   → Análise de repositório
+│   ├── git-executor  → Operações Git
+│   ├── git-healer    → Auto-resolução de conflitos
+│   ├── git-branch    → Gerenciamento de branches
+│   └── git-tag       → Operações de tags
+├── 🛡️ Cartuchos de Segurança
+│   ├── sec-sanitizer → Bloqueia arquivos sensíveis
+│   ├── sec-redactor  → Mascara dados sensíveis
+│   └── sec-keyring   → Armazenamento seguro de credenciais
+└── 🔧 Cartuchos de Ferramentas
+    ├── tool-stealth   → Oculta arquivos privados temporariamente
+    └── tool-ignore    → Gerenciamento inteligente de .gitignore
+```
+
+### Fluxo de Automação
+
+```mermaid
+graph LR
+    A[Stealth Stash] --> B[Scanner]
+    B --> C[AI Brain]
+    C --> D[Review]
+    D --> E[Executor]
+    E --> F[Healer]
+    F --> G[Restore]
+    
+    A -->|Oculta arquivos privados| H[.gitpy-temp]
+    B -->|Gera diff| I[Estado do repositório]
+    C -->|Analisa com IA| J[Commit semântico]
+    D -->|Confirmação do usuário| K[Regenerar?]
+    E -->|Executa git| L[Commit & push]
+    F -->|Corrige erros| M[Auto-cura]
+    G -->|Restaura arquivos| N[Estado original]
+```
+
+---
+
+## 🌟 Matriz de Funcionalidades
+
+| Categoria | Funcionalidade | Descrição | Comando |
+| :--- | :--- | :--- | :--- |
+| **� IA Core** | **Commits Semânticos** | Analisa diffs e escreve Conventional Commits | `auto` |
+| | **Regeneração de Mensagens** | Regeneração interativa até satisfação | `auto` (interativo) |
+| | **Suporte Multi-Provider** | Groq, OpenAI, Gemini, Ollama, OpenRouter | `--model <provider>` |
+| | **Dicas de Contexto** | Guia IA com contexto específico | `-m "contexto"` |
+| **� Automação** | **Modo Totalmente Autônomo** | Operação hands-free completa | `auto --yes` |
+| | **Menu Interativo** | Menu guiado para todas operações | `menu` |
+| | **Simulação Dry Run** | Prévia ações sem executar | `--dry-run` |
+| | **Commits Locais Apenas** | Commit sem push | `--no-push` |
+| | **Modo Skip Deploy** | Adiciona [CI Skip] para evitar builds | `--nobuild` |
+| **🌿 Gerenciamento de Branch** | **Criação de Branch de Teste** | Cria/usando branches isolados | `--branch <nome>` |
+| | **Navegação de Branch** | Alterna entre branches existentes | `--branch <existente>` |
+| | **Central de Branches** | Operações completas de branch | `menu → Central de Branches` |
+| **🏷️ Gerenciamento de Tags** | **Operações de Tags** | Criar, listar, deletar, resetar tags | `menu → Central de Tags` |
+| | **Confirmação Forte** | Código de 4 caracteres para ops destrutivas | Interativo |
+| **🛡️ Segurança** | **Stealth Mode** | Oculta temporariamente arquivos privados | `.gitpy-private` |
+| | **Muralha de Chumbo** | Sistema de segurança de 3 camadas | Automático |
+| | **Proteção Blocklist** | Impede commits de arquivos sensíveis | Automático |
+| | **Redação de Dados** | Mascara senhas em diffs | Automático |
+| | **Panic Lock .Env** | Proteção inquebrável de .env | Automático |
+| **🧠 Recursos Inteligentes** | **Smart Ignore** | Sugestões proativas de .gitignore | Automático |
+| | **Smart Whitelist** | Exceções customizadas em .gitignore | Comentários em .gitignore |
+| | **Configuração Modular** | Padrões ignoráveis editáveis | `common_trash.json` |
+| | **Vibe Vault** | Lida com diffs grandes (>100KB) | Automático |
+| **🌍 Internacionalização** | **Interface Multi-Idioma** | CLI em Inglês/Português | `LANGUAGE=pt` |
+| | **Commits Multi-Idioma** | Mensagens em Inglês/Português | `COMMIT_LANGUAGE=pt` |
+| | **Configurações Independentes** | Idiomas diferentes para interface/commits | Config `.env` |
+| **🛠️ Diagnósticos** | **Verificação de Saúde IA** | Testa chaves de API e conectividade | `check-ai` |
+| | **Modo Deep Trace** | Captura payloads de IA para debug | `--debug` |
+| | **Visualizador de Recursos** | Mapa completo de recursos do GitPy | `menu → Ver Recursos` |
+| **🔧 Avançado** | **Git Healer** | Auto-correção de conflitos de push | Automático |
+| | **Reset de Repositório** | Operações guiadas de reset de repo | `menu → Resetar Repositório` |
+| | **Wrappers de Comando** | Integração global com sistema | `gitpy.cmd`, `pygit.cmd` |
+
+---
+
+## 🎮 Guia de Uso
+
+### Comandos Principais
+
+| Comando | Propósito | Exemplo |
+| :--- | :--- | :--- |
+| **`auto`** | Commit autônomo & push | `python launcher.py auto --yes` |
+| **`menu`** | Interface guiada interativa | `python launcher.py menu` |
+| **`check-ai`** | Testa conectividade do provedor IA | `python launcher.py check-ai` |
+
+### Opções de Comando
+
+| Flag | Atalho | Função | Exemplo |
+| :--- | :--- | :--- | :--- |
+| `--yes` | `-y` | **Confirmação Automática** - Aceita tudo sem perguntar | `auto --yes` |
+| `--dry-run` | | **Simulação** - Prévia ações sem executar | `auto --dry-run` |
+| `--no-push` | | **Commit Local Apenas** - Commit sem push | `auto --yes --no-push` |
+| `--nobuild` | | **Skip Deploy** - Adiciona [CI Skip] para evitar builds CI/CD | `auto --yes --nobuild` |
+| `--branch <nome>` | `-b` | **Branch de Teste** - Cria/usando branch específico | `auto --yes --branch feature-test` |
+| `--message "..."` | `-m` | **Dica de Contexto** - Guia IA com contexto específico | `auto -m "fix login bug"` |
+| `--model <nome>` | | **Escolher Provider** - Seleciona provedor IA manualmente | `auto --model openai` |
+| `--debug` | | **Deep Trace** - Ativa diagnóstico avançado | `--debug auto` |
+| `--path <dir>` | `-p` | **Diretório Alvo** - Executa em repositório diferente | `--path /caminho/para/repo auto` |
+
+### Exemplos Práticos
+
+#### Workflows Básicos
+```bash
+# Fluxo autônomo completo
+python launcher.py auto --yes
+
+# Modo interativo com regeneração
 python launcher.py auto
+# → Mostra mensagem de commit
+# → Escolha: Executar / Regenerar / Cancelar
+
+# Simulação para ver o que aconteceria
+python launcher.py auto --dry-run
 ```
 
-> **Nota:** Por padrão, GitPy pedirá confirmação antes de fazer push. Para uma experiência **totalmente autônoma** (sem perguntas), adicione a flag `--yes`:
-> ```bash
-> python launcher.py auto --yes
-> ```
-
-> **Configuração de Idioma:** GitPy suporta múltiplos idiomas. Crie um arquivo `.env` (veja Configuração do Ambiente abaixo) para configurar:
-> - `LANGUAGE=en` para interface em inglês, `LANGUAGE=pt` para interface em português
-> - `COMMIT_LANGUAGE=en` para commits em inglês, `COMMIT_LANGUAGE=pt` para commits em português
-> 
-> Exemplo para interface em português com commits em inglês:
-> ```env
-> LANGUAGE=pt
-> COMMIT_LANGUAGE=en
-> ```
-
-O launcher iniciará o processo de automação inteligente:
-1.  **Stealth Stash:** Oculta seus arquivos privados (`.gitpy-private`).
-2.  **Scanner:** Verifica mudanças e sugere adições ao `.gitignore`.
-3.  **Think:** Analisa o código com IA e gera o commit.
-4.  **Review:** Mostra a mensagem de commit gerada com opções para:
-    - **Executar** - Prosseguir com a mensagem atual
-    - **Regenerar** - Pedir nova mensagem à IA (repetir quantas vezes quiser)
-    - **Cancelar** - Abortar a operação
-5.  **Act:** Realiza o commit e push seguro.
-6.  **Restore:** Retorna seus arquivos privados ao lugar.
-
-### Modo Menu Interativo (NOVO!)
-
-Agora o GitPy também suporta menus guiados com **InquirerPy**.
-
+#### Gerenciamento de Branch
 ```bash
-# Abre o menu interativo (quando o terminal for interativo / TTY)
-python launcher.py
+# Crie e trabalhe em branch de teste
+python launcher.py auto --yes --branch feature-auth
 
-# Comando explícito de menu
-python launcher.py menu
+# Altere para branch existente
+python launcher.py auto --yes --branch develop
 
-# Wrappers opcionais
-gitpy
-gitpy menu
+# Teste isolado sem deploy
+python launcher.py auto --yes --branch experiment --nobuild --no-push
 ```
 
-Cobertura do menu:
-- O wizard de `Auto` expõe todas as opções atuais: `path`, `model`, `message`, `branch`, `dry_run`, `no_push`, `nobuild`, `debug`, `yes`.
-- A `Central de Branches` inclui operações específicas: branch atual, listar locais/remotas, validar nome, criar+trocar e trocar para branch existente.
-- `Central de Tags` oferece operações completas: listar locais/remotas, criar leves/anotadas, deletar com confirmação, resetar repositório para tag.
-- `Check AI` executa o mesmo diagnóstico de `python launcher.py check-ai`.
-- `Resetar Repositório` abre o `git_reset_to_github.py` em modos guiados (`summary`, `dry-run`, `reset completo`).
-- `Ver Recursos` mostra o mapa completo dos recursos do GitPy (fluxos CLI, wrappers, opções globais, i18n).
-- `Sair` fecha a sessão interativa.
+#### Cenários de Produção
+```bash
+# Commits em andamento (apenas local)
+python launcher.py auto --yes --no-push
 
-Após cada operação, você pode voltar ao menu principal e continuar navegando sem reiniciar o GitPy.
-Comportamento dos prompts agora está explícito: listas usam setas + Enter, campos de texto pedem digitação + Enter.
+# Economize cota de build em CI/CD
+python launcher.py auto --yes --nobuild
 
-Notas de compatibilidade:
-- Os fluxos CLI existentes continuam iguais (`auto`, `check-ai`, todas as flags e ordem de uso).
-- Em ambiente não interativo (CI/pipes, sem TTY), o GitPy não tenta abrir menus automaticamente.
-- `InquirerPy` agora faz parte das dependências (`pip install -r requirements.txt`).
+# Debug problemas de integração com IA
+python launcher.py --debug auto --model groq
+
+# Commit com contexto específico
+python launcher.py auto --yes -m "refatorar sistema de autenticação"
+```
 
 ---
 
-## 📦 Configuração do Ambiente
+## 🔧 Configuração
 
-GitPy requer um arquivo `.env` no diretório raiz para configuração. Copie `.env.example` para `.env`:
+### Configuração do Ambiente
 
+1. **Copie o template**:
 ```bash
 cp .env.example .env
 ```
 
-### Configuração Obrigatória
-
+2. **Configure seus provedores**:
 ```env
 # Provedor de IA (auto, openrouter, groq, openai, gemini, ollama)
 AI_PROVIDER=auto
@@ -125,7 +211,163 @@ OPENAI_API_KEY=sua_chave_openai_aqui
 GEMINI_API_KEY=sua_chave_gemini_aqui
 ```
 
-### Exemplos de Configuração de Idioma
+### Configuração de Idioma
+
+| Configuração | Opções | Padrão | Descrição |
+| :--- | :--- | :--- | :--- |
+| `LANGUAGE` | `en`, `pt` | `en` | Idioma da interface (menus, mensagens) |
+| `COMMIT_LANGUAGE` | `en`, `pt` | `en` | Idioma das mensagens de commit geradas por IA |
+
+**Exemplo Bilíngue**:
+```env
+# Interface em português, commits em inglês
+LANGUAGE=pt
+COMMIT_LANGUAGE=en
+```
+
+### Configuração do Provedor de IA
+
+| Provedor | Config Modelo | Chave Necessária | Obter Chave |
+| :--- | :--- | :--- | :--- |
+| **Groq** | `GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct` | `GROQ_API_KEY` | [console.groq.com](https://console.groq.com/keys) |
+| **OpenAI** | `OPENAI_MODEL=gpt-4o-mini` | `OPENAI_API_KEY` | [platform.openai.com](https://platform.openai.com/api-keys) |
+| **Gemini** | `GEMINI_MODEL=gemini-pro` | `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com/app/apikey) |
+| **OpenRouter** | `OPENROUTER_MODEL=meta-llama/llama-4-scout` | `OPENROUTER_API_KEY` | [openrouter.ai](https://openrouter.ai/keys) |
+| **Ollama** | Modelos locais | Nenhuma | [ollama.ai](https://ollama.ai) |
+
+---
+
+## 🛡️ Recursos de Segurança
+
+### Proteção Multi-Camadas
+
+1. **Sistema Blocklist** - Impede leitura de arquivos sensíveis
+2. **Redação de Dados** - Mascara senhas e tokens em diffs
+3. **Stealth Mode** - Oculta temporariamente arquivos privados
+4. **Panic Lock** - Proteção inquebrável de .env
+
+### Stealth Mode (.gitpy-private)
+
+Oculte arquivos sensíveis sem poluir seu `.gitignore` público:
+
+```text
+# .gitpy-private
+.my_secret_folder/
+local_logs.txt
+agent_configs_x/*.json
+```
+
+**Como funciona**:
+1. GitPy move arquivos para pasta temporária `.gitpy-temp`
+2. Git executa "cego" sem ver estes arquivos
+3. Arquivos são restaurados após as operações completarem
+4. Recuperação automática se interrompido
+
+### Smart Whitelist (.gitignore)
+
+Controle o que é sugerido como "lixo" usando comentários especiais:
+
+```gitignore
+# ["build", "node_modules"] do not ignore
+*.log
+*.pyc
+.DS_Store
+
+# ["coverage"] do not ignore
+.env
+```
+
+### Bloqueio de Segurança .Env
+
+**⚠️ PROTEÇÃO INQUEBÁVEL**: Tentar adicionar .env à whitelist aciona desligamento imediato:
+
+```
+⚠️ ALERTA DE SEGURANÇA: O arquivo .env foi marcado para NÃO ser ignorado.
+Isso pode expor suas senhas no GitHub!
+ERRO: Operação cancelada por segurança.
+```
+
+---
+
+## 🌿 Recursos Avançados
+
+### Regeneração de Mensagens
+
+Regeneração interativa até ficar satisfeito:
+
+```bash
+python launcher.py auto
+# → IA gera mensagem de commit
+# → Escolha: Executar / Regenerar / Cancelar
+# → Se "Regenerar": IA cria nova mensagem
+# → Repita até ficar satisfeito
+```
+
+### Gerenciamento de Branch
+
+**Operações completas de branch**:
+
+```bash
+# Central de branch interativa
+python launcher.py menu
+# → "Central de Branches"
+# → Branch atual, listar branches, criar, alternar
+```
+
+**Operações de branch por linha de comando**:
+```bash
+# Crie nova branch de teste
+python launcher.py auto --yes --branch feature-login
+
+# Altere para branch existente
+python launcher.py auto --yes --branch develop
+
+# Validação de branch (padrões Git)
+# - Deve começar com letra/número
+# - Máximo 255 caracteres
+# - Sem nomes reservados (HEAD, master, main)
+```
+
+### Gerenciamento de Tags
+
+**Central de Tags Interativa**:
+```bash
+python launcher.py menu
+# → "Central de Tags"
+# → Listar/Criar/Deletar/Resetar tags
+```
+
+**Sistema de Confirmação Forte**:
+- Operações destrutivas requerem código de 4 caracteres
+- Formato: `LETRA-NÚMERO-LETRA-LETRA` (ex: `B2CR`)
+- Validação case-insensitive
+- Previne deleções acidentais
+
+### Git Healer
+
+**Resolução automática de conflitos**:
+- Detecta falhas de push (conflitos, rejeições)
+- Pede à IA instruções específicas para correção
+- Aplica correções automaticamente
+- Tenta push novamente até o sucesso
+
+---
+
+## 🌍 Internacionalização
+
+### Suporte Multi-Idioma
+
+**Idiomas da Interface**:
+- Inglês (`en`) - Padrão
+- Português (`pt`) - Tradução completa
+
+**Idiomas de Commit**:
+- Inglês (`en`) - Padrão
+- Português (`pt`) - Suporte completo
+
+### Configuração Independente
+
+Interface e commits podem usar idiomas diferentes:
 
 ```env
 # Interface em português, commits em inglês
@@ -135,309 +377,149 @@ COMMIT_LANGUAGE=en
 # Interface em inglês, commits em português  
 LANGUAGE=en
 COMMIT_LANGUAGE=pt
-
-# Ambos em inglês (padrão)
-LANGUAGE=en
-COMMIT_LANGUAGE=en
 ```
 
-Para opções completas de configuração, veja a seção [Internacionalização](#-internacionalização-multi-language) abaixo.
+### Fallback Seguro
 
-### Exemplos de Uso
+- Traduções ausentes automaticamente usam Inglês como fallback
+- Templates de commit usam Inglês se não encontrados
+- Sem mudanças quebrantes ao adicionar novos idiomas
 
-```bash
-# Modo totalmente automático
-python launcher.py auto --yes
+### Adicionando Novos Idiomas
 
-# Crie e use uma branch de teste para operações seguras
-python launcher.py auto --yes --branch feature-test
+Para adicionar suporte para novo idioma (ex: Espanhol):
+1. Crie `locales/es.json` para traduções da interface
+2. Crie `cartridges/ai/ai-brain/prompts/es.json` para templates de commit
+3. Configure `LANGUAGE=es` e/ou `COMMIT_LANGUAGE=es` em `.env`
 
-# Use branch existente
-python launcher.py auto --yes --branch branch-existente
+---
 
-# Evite deployment automático (útil para economizar cota de build)
-python launcher.py auto --yes --nobuild
+## 🛠️ Diagnósticos & Debugging
 
-# Commit local apenas, sem push
-python launcher.py auto --yes --no-push
+### Verificação de Saúde da IA
 
-# Simulação para verificar o que será feito
-python launcher.py auto --dry-run
-
-# Combine branch com outras flags
-python launcher.py auto --yes --branch test --no-push --nobuild
-```
-
-### Flags e Opções
-
-| Flag | Atalho | Função | Exemplo de Uso |
-| :--- | :--- | :--- | :--- |
-| `--yes` | `-y` | **Confirmação Automática:** Aceita todas as perguntas automaticamente, permitindo execução totalmente autônoma. | `gitpy auto --yes` |
-| `--dry-run` | | **Simulação:** Mostra o que seria feito sem executar nenhum comando Git. Útil para verificar ações antes de confirmar. | `gitpy auto --dry-run` |
-| `--no-push` | | **Commit Local:** Realiza o commit mas não envia ao remoto. Ideal para commits em andamento ou quando você quer agrupar vários commits antes do push. | `gitpy auto --yes --no-push` |
-| `--nobuild` | | **Skip Deploy:** Adiciona `[CI Skip]` à mensagem para evitar deploy automático em CI/CD. Economiza quota de builds. | `gitpy auto --yes --nobuild` |
-| `--branch <nome>` | `-b` | **Branch de Teste:** Cria ou usa uma branch específica para operações. Se a branch não existir, será criada automaticamente. Útil para trabalho isolado. | `gitpy auto --yes --branch feature-test` |
-| `--message "..."` | `-m` | **Dica de Contexto:** Fornece uma dica de contexto para a IA gerar uma mensagem de commit mais específica. Ex: `-m "fix login"` direciona a IA para focar em correções. | `gitpy auto -m "fix login bug"` |
-| `--model <nome>` | | **Escolher Provider:** Seleciona manualmente o provedor de IA (auto, openrouter, groq, openai, gemini, ollama). Sobrescreve `AI_PROVIDER` do `.env`. | `gitpy auto --model groq` |
-| `--debug` | | **Deep Trace:** Ativa modo de diagnóstico avançado, salvando payloads e respostas da IA em `.vibe-debug.log`. Essencial para debug de problemas de integração. | `gitpy --debug auto` |
-| `--path <dir>` | `-p` | **Diretório Alvo:** Define o diretório alvo para execução do GitPy. Permite operar em repositórios diferentes do diretório atual. | `gitpy --path /caminho/para/repo auto` |
-
-#### Exemplos Práticos Combinados:
-
-```bash
-# Fluxo completo autônomo
-gitpy auto --yes
-
-# Commit local para trabalho em andamento
-gitpy auto --yes --no-push
-
-# Testar mudanças em branch isolada sem deploy
-gitpy auto --yes --branch experiment --nobuild --no-push
-
-# Simular para ver o que aconteceria
-gitpy auto --dry-run
-
-# Commit com contexto específico usando IA específica
-gitpy auto --yes -m "refactor auth" --model openai
-
-# Debugar problemas de integração com IA
-gitpy --debug auto --model groq
-```
-
-### 🛠️ Comandos de Diagnóstico
-**NOVO!** GitPy agora permite testar a saúde da sua configuração de IA:
+Teste sua configuração de IA:
 
 ```bash
 python launcher.py check-ai
 ```
 
-Este comando verifica se suas chaves de API estão configuradas corretamente e tenta uma comunicação básica com todos os providers disponíveis, exibindo uma tabela informativa.
+**Verificações realizadas**:
+- Validação de chaves de API
+- Conectividade do provedor
+- Disponibilidade do modelo
+- Validação do formato de resposta
 
-### 🌍 Opções Globais
-_(Use estas flags antes ou depois de `auto`)_
+### Modo Deep Trace
 
-| Flag | Atalho | Função |
-| :--- | :--- | :--- |
-| `--debug` | | **Deep Trace:** Ativa rastreamento profundo de payloads em `.vibe-debug.log`. |
-| `--path <dir>` | `-p` | **Alvo:** Executa GitPy em outro diretório. |
+Ative debugging avançado:
 
----
-
-## 🔄 Regeneração de Mensagens (NOVO!)
-
-**NOVO!** GitPy agora permite regenerar mensagens de commit interativamente até ficar satisfeito com o resultado.
-
-### Como funciona:
-Após a IA gerar uma mensagem de commit, GitPy apresenta três opções:
-
-1. **Executar Commit** - Prosseguir com a mensagem atual
-2. **Gerar Nova Mensagem** - Pedir à IA para criar uma mensagem diferente
-3. **Cancelar Operação** - Abortar o processo
-
-### Fluxo de Uso:
 ```bash
-# Execute o comando auto
-gitpy auto
-
-# GitPy irá:
-# 1. Analisar suas mudanças
-# 2. Gerar mensagem inicial de commit
-# 3. Mostrar a mensagem com opções
-# 4. Aguardar sua escolha
-# 5. Se escolher "regenerar", repetir do passo 2
-# 6. Se escolher "executar", realizar o commit
+python launcher.py --debug auto
 ```
 
-### Benefícios:
-- **Mensagens Perfeitas**: Continue regenerando até obter a mensagem de commit perfeita
-- **Sem Mais Frustração**: Nunca fique preso com uma mensagem mal gerada
-- **Processo Iterativo**: Múltiplas tentativas com o mesmo contexto
-- **Controle Total**: Você decide quando a mensagem está boa o suficiente
+**Captura em `.vibe-debug.log`**:
+- Payloads exatos enviados para IA
+- Respostas brutas da IA incluindo erros
+- Códigos de erro técnicos
+- Ciclo completo de requisição/resposta
 
-### Compatibilidade:
-- **Com --yes**: Executa automaticamente sem perguntar (preserva fluxo autônomo)
-- **Sem --yes**: Mostra o menu interativo com todas as três opções
-- **Fallback**: Se InquirerPy não estiver disponível, usa confirmação simples sim/não
+**Casos de uso**:
+- Debug erros de cota excedida
+- Identificar problemas de disponibilidade de modelo
+- Auditar dados enviados para LLMs
+- Monitorar integração durante desenvolvimento
 
----
+### Visualizador de Recursos
 
-## 🌿 Modo Branch de Teste (--branch)
-
-**NOVO!** GitPy agora suporta criar e usar branches de teste para testar alterações com segurança sem afetar sua branch principal.
-
-### Como funciona:
-- Quando você usa `--branch <nome>`, GitPy irá:
-  1. **Criar** a branch se não existir
-  2. **Alternar** para a branch especificada
-  3. **Realizar** todas as operações (scan, commit, push) naquela branch
-  4. **Manter** você na branch de teste após completar as operações
-
-### Exemplos de Uso:
-```bash
-# Crie uma nova branch de teste e trabalhe nela
-python launcher.py auto --yes --branch feature-login-fix
-
-# Use uma branch existente
-python launcher.py auto --yes --branch develop
-
-# Combine com outras flags para controle completo
-python launcher.py auto --yes --branch experiment --no-push --nobuild
-```
-
-### Benefícios:
-- **Segurança:** Teste alterações sem arriscar sua branch principal
-- **Isolamento:** Mantenha trabalho experimental separado
-- **Flexibilidade:** Funciona com todas as funcionalidades existentes do GitPy
-- **Conveniência:** Um comando para criar, alternar e trabalhar em uma branch
-
-### Validação de Nome de Branch:
-GitPy valida nomes de branch para garantir que seguem padrões Git:
-- Deve começar com letra ou número
-- Pode conter letras, números, pontos, hífens e underscores
-- Não pode ser nomes reservados (HEAD, master, main, etc.)
-- Máximo 255 caracteres
-
-### 🔄 Navegação entre Branches com GitPy
-
-**DICÃO PROFISSIONAL:** Você pode usar a flag `--branch` do GitPy não apenas para criar novas branches, mas também para navegar entre branches existentes.
-
-#### Exemplos de Navegação:
-```bash
-# Altere para a branch main e trabalhe lá
-python launcher.py auto --yes --branch main
-
-# Altere para a branch de desenvolvimento
-python launcher.py auto --yes --branch develop
-
-# Altere para qualquer branch existente
-python launcher.py auto --yes --branch feature-auth
-```
-
-#### Como funciona:
-- **Se a branch existe**: GitPy alterna para ela e realiza operações lá
-- **Se a branch não existe**: GitPy cria primeiro, depois alterna
-- **Sem --branch**: GitPy trabalha na sua branch atual
-
-#### Workflow Comum:
-```bash
-# Você está atualmente em uma branch de teste
-$ git branch --show-current
-dev-teste
-
-# Volte para a main usando GitPy
-python launcher.py auto --yes --branch main
-
-# Agora você está na main e pronto para trabalhar
-$ git branch --show-current
-main
-```
-
-Isso transforma o GitPy em uma ferramenta completa de gerenciamento de branches, não apenas para criar branches de teste!
-
----
-
-## 🏷️ Central de Tags
-
-**NOVO!** GitPy agora oferece central completa de tags com confirmação forte para operações destrutivas.
-
-### Como funciona:
-Acesse a Central de Tags através do menu interativo:
 ```bash
 python launcher.py menu
-# Selecione "Central de Tags"
+# → "Ver Recursos"
 ```
 
-### Operações Disponíveis:
-- **Listar Tags**: Visualizar todas as tags locais e remotas no seu repositório
-- **Criar Tag**: Criar tags leves ou anotadas com mensagens opcionais
-- **Deletar Tag**: Remover tags (local e remota) com confirmação forte
-- **Resetar para Tag**: Resetar seu repositório para uma versão específica de tag com confirmação forte
+Mostra mapa completo de recursos do GitPy:
+- Fluxos e comandos CLI
+- Wrappers disponíveis
+- Opções globais
+- Status i18n
 
-### Sistema de Confirmação Forte:
-Para operações destrutivas (delete e reset), GitPy usa um **código de confirmação de 4 caracteres** no formato `LETRA-NÚMERO-LETRA-LETRA` (ex: `B2CR`):
-1. GitPy gera um código aleatório
-2. Você deve digitar o código exato para confirmar (case-insensitive)
-3. Isso previne deleções ou resets acidentais
+---
 
-**Confirmação Case-Insensitive**: Você pode digitar o código em qualquer variação de maiúsculas/minúsculas:
-- Gerado: `K7OT` → Você pode digitar: `k7ot`, `K7ot`, `k7OT`, etc.
+## 📦 Sistema Vibe Vault
 
-### Exemplos de Uso:
+### Lidando com Diffs Grandes
+
+**Gerenciamento automático de payloads grandes**:
+- Diffs > 100KB armazenados automaticamente na memória
+- IDs de referência passados em vez de dados brutos
+- Previne problemas de serialização JSON
+- Mantém performance com mudanças grandes
+
+### Gerenciamento de Memória
+
+```python
+# Nos bastidores (automático)
+ref_id = VibeVault.store(large_diff)
+# Passa ref_id para cartuchos de IA
+result = VibeVault.retrieve(ref_id)
+VibeVault.cleanup(ref_id)
+```
+
+---
+
+## 🧰 Wrappers de Linha de Comando
+
+### Integração com Windows
+
+**gitpy.cmd**:
+```batch
+@echo off
+python "%~dp0launcher.py" %*
+```
+- Execute GitPy de qualquer diretório
+- Resolução automática de caminho
+- Sem mudanças manuais de diretório necessárias
+
+**pygit.cmd**:
+```batch
+@echo off
+C:\code\GitHub\gitpy\.venv\Scripts\activate.bat
+```
+- Ativa ambiente virtual do projeto
+- Dependências consistentes entre equipe
+- Caminho fixo de ambiente virtual
+
+### Adicionando ao Windows PATH
+
+1. Pesquise "Editar variáveis de ambiente do sistema"
+2. Em "Variáveis do sistema", selecione `Path` → "Editar"
+3. Adicione diretório raiz do GitPy
+4. Reinicie terminal
+
+### Port para Linux/macOS
+
+**gitpy.sh**:
 ```bash
-# Central interativa de tags
-python launcher.py menu
-# Selecione "Central de Tags" → Escolha operação
-
-# Uso direto do cartucho (avançado)
-python cartridges/core/git-tag/main.py --json '{"action": "list", "repo_path": ".", "cid": "test"}'
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+python "$SCRIPT_DIR/launcher.py" "$@"
 ```
 
-### Recursos de Segurança:
-- **Aviso de Deleção**: Aviso claro que deleção afeta AMBAS as tags local e remota
-- **Aviso de Reset**: Aviso claro que reset mudará o estado do seu repositório
-- **Validação de Código**: Correspondência case-insensitive de código previne confirmação acidental
-- **Verificação de Working Tree**: Operações de reset exigem working tree limpa
-
----
-
-## 🥷 Stealth Mode (.gitpy-private)
-
-Precisa manter arquivos sensíveis na pasta do seu projeto (como configs de agentes, logs locais) mas não quer它们 no Git ou poluir o `.gitignore` público?
-
-Crie um arquivo `.gitpy-private` na raiz do projeto e liste seus padrões (assim como `.gitignore`):
-
-```text
-# .gitpy-private
-.my_secret_folder/
-local_logs.txt
-agent_configs_x/*.json
-```
-
-**Como funciona:**
-1. Ao executar, GitPy move estes arquivos para uma pasta temporária oculta (`.gitpy-temp`).
-2. Git executa "cego", sem ver estes arquivos.
-3. No final, GitPy restaura tudo ao seu lugar original.
-4. **Segurança:** Se faltar energia ou ocorrer erro, GitPy os restaura na próxima execução. Se houver conflito de nome, salva um backup.
-
----
-
-## 🏗️ Modo Skip Deploy (--nobuild)
-
-**NOVO!** Economize sua cota de build em serviços como Cloudflare Pages (limite de 500/mês) usando a flag `--nobuild`.
-
-### Como funciona:
-- Quando você usa `--nobuild`, GitPy adiciona automaticamente `[CI Skip]` no início da mensagem de commit.
-- Isso sinaliza para serviços CI/CD que devem pular o deployment automático para este commit.
-- A IA continua gerando a mensagem de commit normalmente, apenas com o prefixo adicional.
-
-### Exemplo de Uso:
+**pygit.sh**:
 ```bash
-# Commits e push normalmente, mas evita auto-deploy
-gitpy auto --yes --nobuild
-
-# combine com outras flags
-gitpy auto --yes --nobuild --no-push  # Commit local apenas
-gitpy auto --yes --nobuild -m "fix: correção de bug crítica"  # Com mensagem personalizada
-```
-
-### Mensagem Resultante:
-Se a IA gera `fix: ajusta margem do botão`, com `--nobuild` se torna:
-```
-[CI Skip] fix: ajusta margem do botão
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/.venv/bin/activate"
 ```
 
 ---
 
-## ⚙️ Configuração Modular (common_trash.json)
+## 🔧 Configuração Modular
 
-**NOVO!** GitPy agora permite personalização completa da lista de arquivos e pastas considerados "lixo" para serem ignorados.
+### Padrões Comuns de Lixo
 
-### Como funciona:
-- A lista de padrões está em `cartridges/tool/tool-ignore/common_trash.json`.
-- Você pode editar este arquivo para adicionar, remover ou modificar padrões.
-- GitPy carrega esta lista dinamicamente sem precisar tocar no código Python.
+Edite `cartridges/tool/tool-ignore/common_trash.json`:
 
-### Exemplo de common_trash.json:
 ```json
 [
     ".env",
@@ -455,272 +537,179 @@ Se a IA gera `fix: ajusta margem do botão`, com `--nobuild` se torna:
 ]
 ```
 
-### Segurança:
-- Se o arquivo JSON não existir ou estiver corrompido, GitPy usa uma lista padrão segura.
-- A lista padrão sempre inclui: `[".env", "node_modules/", "build/"]`.
+### Carregamento Dinâmico
+
+- Padrões carregados dinamicamente em runtime
+- Fallback seguro se JSON corrompido
+- Padrão sempre inclui: `[".env", "node_modules/", "build/"]`
+- Sem mudanças de código necessárias para customização
 
 ---
 
-## 🎯 Smart Whitelist (.gitignore)
+## 📋 Casos de Uso & Workflows
 
-**NOVO!** Controle total sobre o que deve ou não ser sugerido como "lixo" usando comentários especiais no seu `.gitignore`.
+### Workflow de Desenvolvimento
 
-### Como usar:
-Adicione um comentário no formato:
-```gitignore
-# ["item1", "item2"] do not ignore
-```
-
-### Exemplos práticos:
-```gitignore
-# ["build", "node_modules"] do not ignore
-*.log
-*.pyc
-.DS_Store
-
-# ["coverage"] do not ignore
-.env
-```
-
-### Resultado:
-- `build/` e `node_modules/` NÃO serão sugeridos como "lixo" para ignorar.
-- `coverage/` NÃO será sugerido como "lixo" para ignorar.
-- Itens da whitelist sempre têm prioridade sobre `common_trash.json`.
-
-### Casos de uso:
-- **Build de Produção**: Quando você quer commitar intencionalmente a pasta `build/`.
-- **Node_modules Específicos**: Quando você precisa de certas dependências no repositório.
-- **Pastas de Config**: Quando você precisa versionar arquivos que normalmente seriam ignorados.
-
----
-
-## 🔒 .Env Security (Panic Lock)
-
-**NOVO!** GitPy implementa uma barreira de segurança inquebrável para proteger seus arquivos `.env` e senhas.
-
-### Como funciona:
-Se você tentar adicionar `.env` à whitelist (exceções), GitPy:
-
-1. **PARA IMEDIATAMENTE** todas as operações automáticas.
-2. **Exibe um alerta visual de alto impacto:**
-   ```
-   ⚠️ ALERTA DE SEGURANÇA: O arquivo .env foi marcado para NÃO ser ignorado. 
-   Isso pode expor suas senhas no GitHub!
-   ```
-3. **Retorna um erro de segurança** que impede prosseguir.
-4. **Requer confirmação manual** do usuário.
-
-### Exemplo que dispara o alerta:
-```gitignore
-# [".env"] do not ignore
-```
-
-### Por que isso é importante:
-- **Proteção contra acidentes**: Impede que senhas e chaves de API sejam commitadas por engano.
-- **Segurança inquebrável**: Nem mesmo `--yes` ou modo auto sobrepõem este alerta.
-- **Consciência de segurança**: Força o usuário a pensar duas vezes antes de expor dados sensíveis.
-
-### Se você realmente precisa commitar .env:
-1. Remova o comentário de exceção do `.gitignore`.
-2. Adicione manualmente `.env` ao `.gitignore` padrão.
-3. **Pense muito cuidadosamente** se é realmente necessário expor esta informação.
-
----
-
-## 🌍 Internacionalização (Multi-Language)
-
-**NOVO!** GitPy agora é global. Você pode configurar diferentes idiomas para a interface do software e para as mensagens que a IA escreve nos commits.
-
-### Config no .env:
-- `LANGUAGE`: Define o idioma para mensagens CLI, menus de ajuda e logs. (Opções: `en`, `pt`)
-- `COMMIT_LANGUAGE`: Define em qual idioma a IA deve escrever suas mensagens de commit. (Opções: `en`, `pt`)
-
-### Configurações Independentes:
-Ambas as configurações funcionam **independentemente**. Você pode ter a interface em um idioma e commits em outro:
-```env
-# Interface em português, commits em inglês
-LANGUAGE=pt
-COMMIT_LANGUAGE=en
-```
-
-### Exemplo Bilíngue:
-Se você quer a interface em português mas trabalha em um repositório internacional onde commits devem ser em inglês:
-```env
-LANGUAGE=pt
-COMMIT_LANGUAGE=en
-```
-
-### Fallback Seguro:
-- **Interface**: Se uma tradução estiver faltando, GitPy usa automaticamente **Inglês** como fallback
-- **Commits**: Se um template de prompt não for encontrado para o idioma solicitado, GitPy usa templates em **Inglês**
-
-### Adicionando Novos Idiomas:
-Para adicionar um novo idioma (ex: Espanhol):
-1. Crie `locales/es.json` para traduções da interface
-2. Crie `cartridges/ai/ai-brain/prompts/es.json` para templates de commit
-3. Configure `LANGUAGE=es` e/ou `COMMIT_LANGUAGE=es` no `.env`
-
-## 🛠️ Modo Debug Profundo (Deep Trace)
-
-**NOVO!** GitPy agora inclui um sistema de rastreamento de baixo nível para diagnosticar falhas silenciosas na IA ou problemas de integração.
-
-### Como funciona:
-Quando ativado pela flag `--debug`, o Kernel do GitPy intercepta toda comunicação entre os cartuchos.
-
-1.  **Payload In:** Captura exatamente o que foi enviado para a IA (prompt, diff, parâmetros).
-2.  **Result Out:** Captura a resposta bruta retornada, incluindo códigos de erro técnicos que normalmente seriam omitidos na interface simplificada.
-3.  **Log de Vibe:** Tudo é gravado em formato JSON no arquivo `.vibe-debug.log` na raiz do projeto.
-
-### Exemplo de uso para diagnóstico:
 ```bash
-# Se o commit falhar sem mensagem clara, rode com debug:
+# Configuração matinal - verificar status da IA
+python launcher.py check-ai
+
+# Trabalhe em branch de feature
+python launcher.py auto --yes --branch feature-new-ui
+
+# Múltiplos commits durante desenvolvimento
+python launcher.py auto --yes --no-push
+
+# Push final com deploy
+python launcher.py auto --yes
+```
+
+### Colaboração em Equipe
+
+```bash
+# Interface em português, commits em inglês (equipe internacional)
+LANGUAGE=pt
+COMMIT_LANGUAGE=en
+
+# Trabalhe em branch compartilhada
+python launcher.py auto --yes --branch team-feature
+
+# Pule deploy durante desenvolvimento ativo
+python launcher.py auto --yes --nobuild
+```
+
+### Deploy de Produção
+
+```bash
+# Correção de bug crítica - pule CI/CD
+python launcher.py auto --yes -m "fix: vulnerabilidade de segurança crítica" --nobuild
+
+# Deploy manual após revisão
+python launcher.py auto --yes
+```
+
+### Troubleshooting
+
+```bash
+# Debug problemas de conexão
 python launcher.py --debug auto
-```
 
-### Por que usar?
-- **Erros de IA:** Descubra se o Groq/OpenAI está retornando erros de cota, modelo inexistente ou filtros de segurança.
-- **Auditoria:** Veja exatamente o que está sendo enviado para as LLMs para garantir privacidade.
-- **Desenvolvimento:** Facilita a criação de novos cartuchos monitorando o fluxo de dados.
+# Verifique .vibe-debug.log para detalhes
+cat .vibe-debug.log
+
+# Verifique provedores de IA
+python launcher.py check-ai
+```
 
 ---
 
-## 📋 Exemplos Práticos: Configuração e Segurança
+## 🏗️ Arquitetura Técnica
 
-### Exemplo 1: Build em Produção
-Você quer commitar a pasta `build/` intencionalmente para deploy:
+### Sistema de Cartuchos
 
-**1. Edite seu .gitignore:**
-```gitignore
-# ["build"] do not ignore
-*.log
-node_modules/
-.env
-```
+Cada cartucho contém:
+- `manifest.json` - Contrato de interface
+- `main.py` - Lógica de negócio (máximo 250 linhas)
+- `dlc.py` - Sidecar de infraestrutura
+- `requirements.txt` - Dependências específicas
 
-**2. Execute o GitPy normalmente:**
+### Arquitetura do Kernel
+
+**VibeKernel** (`vibe_core.py`):
+- Execução híbrida async/sync
+- Carregamento dinâmico de cartuchos
+- Gerenciamento de memória (VibeVault)
+- Rastreamento de ID de correlação
+- Logging de deep trace
+
+### Princípios de Engenharia
+
+1. **Atomicidade** - Cartucho main.py ≤ 250 linhas
+2. **Isolamento de Canais** - STDOUT para JSON, STDERR para logs
+3. **Código Líquido** - Manifest é verdade, implementação é descartável
+4. **Assincronicidade** - Nunca bloqueie o event loop
+
+---
+
+## 🚀 Checklist de Primeiros Passos
+
+### ✅ Pré-requisitos
+- [ ] Python 3.8+ instalado
+- [ ] Git instalado e configurado
+- [ ] Pelo menos uma chave de API de provedor de IA
+
+### ✅ Instalação
+- [ ] Clone repositório
+- [ ] Instale dependências: `pip install -r requirements.txt`
+- [ ] Copie `.env.example` para `.env`
+- [ ] Configure chaves de API em `.env`
+
+### ✅ Verificação
+- [ ] Teste conectividade IA: `python launcher.py check-ai`
+- [ ] Tente dry run: `python launcher.py auto --dry-run`
+- [ ] Faça primeiro commit: `python launcher.py auto`
+
+### ✅ Configuração Opcional
+- [ ] Adicione GitPy ao PATH do sistema
+- [ ] Configure wrappers de comando
+- [ ] Defina idioma preferido em `.env`
+- [ ] Crie `.gitpy-private` para arquivos sensíveis
+
+---
+
+## 🤝 Contribuindo
+
+### Configuração de Desenvolvimento
+
 ```bash
-gitpy auto --yes
+# Clone e configure
+git clone <repository-url>
+cd gitpy
+pip install -r requirements.txt
+
+# Execute testes
+python -m pytest tests/
+
+# Verifique estilo de código
+pylint *.py
 ```
 
-**Resultado:** O GitPy NÃO sugerirá adicionar `build/` ao .gitignore, permitindo que você versione sua pasta de build.
+### Adicionando Novos Cartuchos
+
+1. Crie diretório: `cartridges/domain/module-name/`
+2. Adicione `manifest.json` com contrato de interface
+3. Implemente `main.py` (≤ 250 linhas)
+4. Adicione `dlc.py` para infraestrutura se necessário
+5. Adicione `requirements.txt` para dependências específicas
+6. Teste com: `python launcher.py --debug auto`
+
+### Padrões de Código
+
+- Siga o Guia de Engenharia VIBE
+- Mantenha isolamento de cartuchos
+- Mantenha main.py sob 250 linhas
+- Use async/await para operações de I/O
+- Adicione tratamento de erros abrangente
 
 ---
 
-### Exemplo 2: Node_modules Específicos
-Você precisa versionar `node_modules` para um projeto crítico:
+## 📄 Licença
 
-**1. Configure a whitelist:**
-```gitignore
-# ["node_modules"] do not ignore
-*.log
-.env
-build/
-```
-
-**2. Personalize o common_trash.json (opcional):**
-```json
-[
-    ".env",
-    "*.log",
-    "build/",
-    "coverage/",
-    "dist/"
-]
-```
+Este projeto está licenciado sob a Licença MIT - veja o arquivo LICENSE para detalhes.
 
 ---
 
-### Exemplo 3: Proteção .Env (Segurança)
-Cenário perigoso - alguém tenta remover .env da proteção:
+## 🙏 Agradecimentos
 
-**1. .gitignore perigoso:**
-```gitignore
-# [".env"] do not ignore
-*.log
-node_modules/
-```
-
-**2. Resultado imediato:**
-```
-⚠️ ALERTA DE SEGURANÇA: O arquivo .env foi marcado para NÃO ser ignorado. 
-Isso pode expor suas senhas no GitHub!
-ERRO: Operação cancelada por segurança.
-```
-
-**3. O GitPy PARA completamente até que o risco seja removido.**
-
----
-
-### Exemplo 4: Workflow Completo
-Configure um projeto com controle total:
-
-**1. common_trash.json personalizado:**
-```json
-[
-    ".env",
-    "*.log",
-    "*.tmp",
-    "cache/",
-    "temp/",
-    "vendor/",
-    "coverage/",
-    ".DS_Store"
-]
-```
-
-**2. .gitignore com exceções:**
-```gitignore
-# ["vendor", "cache"] do not ignore
-*.log
-.env
-temp/
-coverage/
-```
-
-**3. Execute com segurança:**
-```bash
-gitpy auto --yes --nobuild  # Evita deploy automático
-```
-
-**Resultado:**
-- ✅ `vendor/` e `cache/` não serão sugeridos como lixo
-- ✅ `*.log`, `.env`, `temp/`, `coverage/` serão sugeridos normalmente
-- ✅ Deploy automático será evitado
-
----
-
-## 🧩 O que acontece "Por Baixo dos Panos"?
-
-### ⚙️ Sistema de Configuração Modular
-GitPy agora tem um sistema de configuração inteligente que equilibra **flexibilidade** e **segurança**:
-
-1. **Carregamento Dinâmico**: A lista "lixo" é carregada de `common_trash.json` com fallback seguro.
-2. **Parser de Exceções**: Analisa comentários em `.gitignore` no formato `# ["item1"] do not ignore`.
-3. **Whitelist de Prioridade**: Exceções em `.gitignore` sempre ganham da lista padrão.
-4. **Bloqueio de Segurança .Env**: Detecção automática de `.env` em exceções com bloqueio total.
-
-### 🚑 Git Healer (Auto-Correção)
-Se `git push` falhar (ex: conflito, remoto à frente), GitPy não desiste. Ele entra no modo healer, pede à IA instruções sobre como corrigir o erro específico, aplica a correção e tenta novamente.
-
-### 🛡️ Muralha de Chumbo (Segurança)
-Um sistema de 3 camadas protege seus segredos:
-1.  **Blocklist:** Impede leitura de arquivos `.env` e chaves SSH.
-2.  **Redactor:** Mascaras senhas e tokens no diff antes de enviar para a IA.
-3.  **Stealth Mode:** Oculta fisicamente arquivos sensíveis durante a operação.
-4.  **Panic Lock .Env:** Alerta visual e bloqueio total se `.env` for marcado como exceção.
-
-### 📦 Vibe Architecture (Cartuchos)
-GitPy é modular. Cada funcionalidade é um "cartucho" isolado em `cartridges/`:
--   `ai/`: Adaptadores para diferentes LLMs.
--   `core/`: Lógica Git profunda (Scanner, Executor, Healer).
--   `security/`: Módulos de proteção.
--   `tool/`: Ferramentas auxiliares (Stealth, Smart Ignore, Tool-Ignore com configuração modular).
-
-O arquivo `launcher.py` é apenas o maestro regendo esta orquestra.
+- **Vibe Engineering** - Arquitetura modular de cartuchos
+- **Provedores de IA** - Groq, OpenAI, Gemini, Ollama, OpenRouter
+- **Comunidade Open Source** - Ferramentas e bibliotecas que tornam o GitPy possível
 
 ---
 
 **GitPy: Code Mais Inteligente, Não Mais Difícil.** 💜
+
+---
 
 ## 🧰 Wrappers de Linha de Comando GitPy
 
