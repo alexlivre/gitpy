@@ -6,6 +6,8 @@ import re
 from typing import Any, Dict
 
 from vibe_core import kernel
+# Importa configuração para garantir que o ambiente esteja carregado
+import env_config
 
 
 _CATEGORY_MAP = {
@@ -166,9 +168,8 @@ Regras:
     # Se 'model' não veio no payload (ex: via flag), tenta buscar no ambiente
     target_model = payload.get("model")
     if not target_model:
-        # Tenta modelo global ou modelo específico do provedor
-        target_model = os.getenv("AI_MODEL") or os.getenv(
-            f"{provider.upper()}_MODEL")
+        # Usa o modelo configurado via env_config
+        target_model = env_config.AI_MODELS.get(provider, "")
 
     # 6. Invocação do LLM (Adapter)
     adapter_name = f"ai/ai-{provider}"  # ai/ai-openai, ai/ai-gemini...

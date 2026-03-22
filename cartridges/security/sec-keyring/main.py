@@ -5,6 +5,8 @@ import os
 from typing import Any, Dict
 
 import keyring
+# Importa configuração para garantir que o ambiente esteja carregado
+import env_config
 
 SERVICE_NAME = "gitpy-cli"
 
@@ -32,8 +34,16 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
 
         elif action == "get":
             # 1. Tenta Variável de Ambiente (Prioridade Máxima)
-            env_var_name = account.upper()
-            env_val = os.getenv(env_var_name)
+            # Mapeamento para os nomes corretos das variáveis
+            env_mapping = {
+                "OPENAI_KEY": "openai",
+                "GEMINI_KEY": "gemini", 
+                "GITHUB_TOKEN": "github"
+            }
+            
+            provider = env_mapping.get(account, account.lower())
+            env_val = env_config.API_KEYS.get(provider, "")
+            
             if env_val:
                 return {"success": True, "value": env_val, "source": "env_var"}
 

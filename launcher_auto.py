@@ -2,6 +2,7 @@
 Auto mode do GitPy - Commit automático com IA.
 """
 import os
+import sys
 
 import typer
 from rich.console import Console
@@ -10,6 +11,7 @@ from rich.panel import Panel
 from vibe_core import VibeVault, kernel
 from i18n import t
 from launcher_shared import run_async, _resolve_repo_path, AutoOptions
+from env_config import COMMIT_LANGUAGE
 from typing import Callable
 
 
@@ -125,8 +127,8 @@ def _run_auto_with_guards(
     run_async(kernel.run("cli/cli-renderer", {"action": "diff_panel", "data": {"diff": diff_content[:2000]}}))
 
     with console.status(f"[bold purple]{t('brain_thinking', model=model)}", spinner="bouncingBall"):
-        raw_commit_lang = os.getenv("COMMIT_LANGUAGE", "en")
-        commit_lang = raw_commit_lang.split("#")[0].strip().lower()
+        # Usa o idioma de commit já carregado do env_config
+        commit_lang = COMMIT_LANGUAGE
 
         brain_res = run_async(
             kernel.run(
@@ -292,6 +294,68 @@ def _run_auto_with_branch_guards(
     """Wrapper que adiciona guards de branch antes de rodar auto."""
     console = Console()
     repo_path = _resolve_repo_path(ctx)
+
+    def _is_tty() -> bool:
+        try:
+            return sys.stdin.isatty() and sys.stdout.isatty()
+        except Exception:
+            return False
+
+    if not options.branch and _is_tty():
+        try:
+            from launcher_menu import _inquirer_select
+
+            # Obter branch atual para exibir no menu
+            current_branch = "main"  # valor padrão
+            try:
+                listed = run_async(
+                    kernel.run("core/git-branch", {"action": "list", "repo_path": repo_path})
+                )
+                if listed.get("success"):
+                    current_branch = listed.get("current_branch", "main")
+            except Exception:
+                pass
+            
+            branch_mode = _inquirer_select(
+                t("menu_prompt_branch_mode"),
+                choices=[
+                    {"name": t("menu_prompt_branch_none").format(branch=current_branch), "value": "none"},
+                    {"name": t("menu_prompt_branch_existing"), "value": "existing"},
+                    {"name": t("menu_action_back"), "value": "none"},
+                ],
+                default="none",
+                pointer="❯",
+                qmark="🌿",
+                amark="✓",
+                cycle=True,
+            )
+
+            if branch_mode == "existing":
+                listed = run_async(
+                    kernel.run("core/git-branch", {"action": "list", "repo_path": repo_path})
+                )
+                if listed.get("success"):
+                    current_branch = listed.get("current_branch", "")
+                    branches = listed.get("all_branch_names", [])
+                    if branches:
+                        choices = []
+                        for name in branches:
+                            label = f"{name} [dim]({t('menu_branch_current_marker')})[/dim]" if name == current_branch else name
+                            choices.append({"name": label, "value": name})
+
+                        selected_branch = _inquirer_select(
+                            t("menu_branch_select_existing_prompt"),
+                            choices=choices + [{"name": t("menu_action_back"), "value": "back"}],
+                            default=current_branch if current_branch else None,
+                            pointer="❯",
+                            qmark="🌿",
+                            amark="✓",
+                            cycle=True,
+                        )
+                        if selected_branch != "back":
+                            options.branch = selected_branch
+        except Exception:
+            pass
 
     if options.branch:
         validation_res = run_async(

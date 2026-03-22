@@ -11,6 +11,7 @@ from rich.panel import Panel
 
 from i18n import t
 from navigation_stack import get_nav_stack
+from env_config import AI_PROVIDER
 
 
 class MenuDependencyError(RuntimeError):
@@ -142,6 +143,8 @@ def _pause_menu() -> None:
 
 def _collect_auto_options_from_menu(ctx: typer.Context):
     from launcher import AutoOptions
+    from vibe_core import kernel
+    from launcher_shared import run_async
 
     default_path = (ctx.obj or {}).get("path", ".")
     
@@ -193,7 +196,7 @@ def _collect_auto_options_from_menu(ctx: typer.Context):
         # Já está em um repo Git, usa o caminho atual diretamente
         chosen_path = default_path
 
-    default_model = os.getenv("AI_PROVIDER", "auto")
+    default_model = AI_PROVIDER
     model_choices = ["auto", "openrouter", "groq", "openai", "gemini", "ollama"]
     if default_model not in model_choices:
         default_model = "auto"
@@ -221,9 +224,67 @@ def _collect_auto_options_from_menu(ctx: typer.Context):
     message = _inquirer_text(t("menu_prompt_message"), default="").strip()
     if message.lower() == "back":
         return None
-    branch = _inquirer_text(t("menu_prompt_branch"), default="").strip()
-    if branch.lower() == "back":
+    branch = None
+    
+    # Obter branch atual para exibir no menu
+    repo_path = chosen_path or default_path
+    current_branch = "main"  # valor padrão
+    try:
+        listed = run_async(kernel.run("core/git-branch", {"action": "list", "repo_path": repo_path}))
+        if listed.get("success"):
+            current_branch = listed.get("current_branch", "main")
+    except Exception:
+        pass
+    
+    branch_mode = _inquirer_select(
+        t("menu_prompt_branch_mode"),
+        choices=[
+            {"name": t("menu_prompt_branch_none").format(branch=current_branch), "value": "none"},
+            {"name": t("menu_prompt_branch_existing"), "value": "existing"},
+            {"name": t("menu_prompt_branch_create"), "value": "create"},
+            {"name": t("menu_auto_back"), "value": "back"},
+        ],
+        default="none",
+        pointer="❯",
+        qmark="⚙",
+        amark="✓",
+        cycle=True,
+    )
+
+    if branch_mode == "back":
         return None
+
+    if branch_mode == "create":
+        branch = _inquirer_text(t("menu_prompt_branch"), default="").strip()
+        if branch.lower() == "back":
+            return None
+    elif branch_mode == "existing":
+        repo_path = chosen_path or default_path
+        listed = run_async(kernel.run("core/git-branch", {"action": "list", "repo_path": repo_path}))
+        if not listed.get("success"):
+            branch = None
+        else:
+            current_branch = listed.get("current_branch", "")
+            branches = listed.get("all_branch_names", [])
+            if not branches:
+                branch = None
+            else:
+                branch_choices = []
+                for name in branches:
+                    label = f"{name} [dim]({t('menu_branch_current_marker')})[/dim]" if name == current_branch else name
+                    branch_choices.append({"name": label, "value": name})
+                selected_branch = _inquirer_select(
+                    t("menu_branch_select_existing_prompt"),
+                    choices=branch_choices + [{"name": t("menu_auto_back"), "value": "back"}],
+                    default=current_branch if current_branch else None,
+                    pointer="❯",
+                    qmark="🌿",
+                    amark="✓",
+                    cycle=True,
+                )
+                if selected_branch == "back":
+                    return None
+                branch = selected_branch
 
     # Coleta as opções booleanas usando checkboxes
     debug_default = (ctx.obj or {}).get("debug", False)
