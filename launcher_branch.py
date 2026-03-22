@@ -1,7 +1,4 @@
-"""
-Branch Center - Gerenciamento de branches do GitPy.
-"""
-import subprocess
+"""Branch Center - Gerenciamento de branches do GitPy."""
 
 import typer
 from rich.console import Console
@@ -14,6 +11,7 @@ from launcher_menu import (
     _render_menu_header,
     _pause_menu,
     _inquirer_select,
+    _inquirer_checkbox,
     _inquirer_text,
     _inquirer_confirm,
     _get_menu_repo_status,
@@ -24,6 +22,92 @@ def _run_branch_center(ctx: typer.Context) -> None:
     console = Console()
     repo_path = _resolve_repo_path(ctx)
 
+    def _load_branch_list():
+        return run_async(kernel.run("core/git-branch", {"action": "list", "repo_path": repo_path}))
+
+    def _build_branch_choices(branch_names, current_branch, include_current=True):
+        choices = []
+        for name in branch_names:
+            if not include_current and name == current_branch:
+                continue
+            label = f"{name} [dim]({t('menu_branch_current_marker')})[/dim]" if name == current_branch else name
+            choices.append({"name": label, "value": name})
+        return choices
+
+    def _run_bulk_action(action: str):
+        listed = _load_branch_list()
+        if not listed.get("success"):
+            console.print(f"[red]{listed.get('error', t('menu_branch_generic_error'))}[/red]")
+            _pause_menu()
+            return
+
+        current_branch = listed.get("current_branch", "")
+        local_branches = listed.get("local_branches", [])
+
+        if action == "bulk_delete":
+            branch_choices = _build_branch_choices(local_branches, current_branch, include_current=False)
+            prompt = t("menu_branch_bulk_delete_prompt")
+            confirm_msg = t("menu_branch_bulk_delete_confirm")
+            kernel_action = "delete"
+            payload_extra = {"force": False}
+        else:
+            branch_choices = _build_branch_choices(local_branches, current_branch, include_current=True)
+            prompt = t("menu_branch_bulk_push_prompt")
+            confirm_msg = t("menu_branch_bulk_push_confirm")
+            kernel_action = "push_branch"
+            payload_extra = {"remote": "origin"}
+
+        if not branch_choices:
+            console.print(f"[yellow]{t('menu_branch_bulk_empty')}[/yellow]")
+            _pause_menu()
+            return
+
+        selected = _inquirer_checkbox(
+            prompt,
+            choices=branch_choices,
+            default=[],
+            pointer="❯",
+            qmark="🌿",
+            cycle=True,
+        )
+        if not selected:
+            console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+            _pause_menu()
+            return
+
+        if not _inquirer_confirm(confirm_msg, default=False, qmark="🌿"):
+            console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+            _pause_menu()
+            return
+
+        ok_count = 0
+        fail_count = 0
+        for selected_branch in selected:
+            payload = {
+                "action": kernel_action,
+                "branch_name": selected_branch,
+                "repo_path": repo_path,
+                **payload_extra,
+            }
+            result = run_async(kernel.run("core/git-branch", payload))
+            if result.get("success"):
+                ok_count += 1
+                console.print(f"[green]{t('menu_branch_bulk_item_ok', branch=selected_branch)}[/green]")
+            else:
+                fail_count += 1
+                error_text = result.get("message") or result.get("error") or t("menu_branch_generic_error")
+                console.print(f"[red]{t('menu_branch_bulk_item_fail', branch=selected_branch, error=error_text)}[/red]")
+
+        console.print(
+            Panel(
+                f"[bold green]{t('menu_branch_bulk_summary_ok', count=ok_count)}[/bold green]\n"
+                f"[bold red]{t('menu_branch_bulk_summary_fail', count=fail_count)}[/bold red]",
+                title=t("menu_branch_bulk_summary_title"),
+                border_style="cyan",
+            )
+        )
+        _pause_menu()
+
     while True:
         _render_menu_header("menu_subtitle_branch", repo_status=_get_menu_repo_status(ctx))
         action = _inquirer_select(
@@ -33,6 +117,8 @@ def _run_branch_center(ctx: typer.Context) -> None:
                 {"name": t("menu_branch_action_list"), "value": "list"},
                 {"name": t("menu_branch_action_create_switch"), "value": "create_switch"},
                 {"name": t("menu_branch_action_switch"), "value": "switch"},
+                {"name": t("menu_branch_action_bulk_delete"), "value": "bulk_delete"},
+                {"name": t("menu_branch_action_bulk_push"), "value": "bulk_push"},
                 {"name": t("menu_branch_action_validate"), "value": "validate"},
                 {"name": t("menu_action_back"), "value": "back"},
             ],
@@ -64,16 +150,23 @@ def _run_branch_center(ctx: typer.Context) -> None:
             continue
 
         if action == "list":
-            result = subprocess.run(
-                ["git", "branch", "-a"],
-                cwd=repo_path,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-            )
-            if result.returncode == 0:
-                content = result.stdout.strip() or t("menu_branch_list_empty")
+            listed = _load_branch_list()
+            if listed.get("success"):
+                local_branches = listed.get("local_branches", [])
+                remote_branches = listed.get("remote_branches", [])
+                current_branch = listed.get("current_branch", "")
+
+                local_lines = [
+                    (f"* {name}" if name == current_branch else f"  {name}")
+                    for name in local_branches
+                ]
+                remote_lines = [f"  {name}" for name in remote_branches]
+                content = (
+                    f"[bold]{t('menu_branch_list_local_title')}[/bold]\n"
+                    f"{chr(10).join(local_lines) if local_lines else t('menu_branch_list_empty')}\n\n"
+                    f"[bold]{t('menu_branch_list_remote_title')}[/bold]\n"
+                    f"{chr(10).join(remote_lines) if remote_lines else t('menu_branch_list_empty')}"
+                )
                 console.print(
                     Panel(
                         f"[white]{content}[/white]",
@@ -82,7 +175,52 @@ def _run_branch_center(ctx: typer.Context) -> None:
                     )
                 )
             else:
-                console.print(f"[red]{result.stderr.strip() or t('menu_branch_generic_error')}[/red]")
+                console.print(f"[red]{listed.get('error', t('menu_branch_generic_error'))}[/red]")
+            _pause_menu()
+            continue
+
+        if action in {"bulk_delete", "bulk_push"}:
+            _run_bulk_action(action)
+            continue
+
+        if action == "switch":
+            listed = _load_branch_list()
+            if not listed.get("success"):
+                console.print(f"[red]{listed.get('error', t('menu_branch_generic_error'))}[/red]")
+                _pause_menu()
+                continue
+
+            current_branch = listed.get("current_branch", "")
+            all_branches = listed.get("all_branch_names", [])
+            branch_choices = _build_branch_choices(all_branches, current_branch, include_current=True)
+            if not branch_choices:
+                console.print(f"[yellow]{t('menu_branch_list_empty')}[/yellow]")
+                _pause_menu()
+                continue
+
+            selected_branch = _inquirer_select(
+                t("menu_branch_select_existing_prompt"),
+                choices=branch_choices + [{"name": t("menu_action_back"), "value": "back"}],
+                default=current_branch if current_branch else None,
+                pointer="❯",
+                qmark="🌿",
+                amark="✓",
+                cycle=True,
+            )
+            if selected_branch == "back":
+                continue
+
+            switch_res = run_async(
+                kernel.run(
+                    "core/git-branch",
+                    {"action": "switch", "branch_name": selected_branch, "repo_path": repo_path},
+                )
+            )
+            if switch_res.get("success"):
+                console.print(f"[bold green]{t('menu_branch_switch_ok', branch=selected_branch)}[/bold green]")
+            else:
+                error_text = switch_res.get("message") or switch_res.get("error") or t("menu_branch_generic_error")
+                console.print(f"[bold red]{error_text}[/bold red]")
             _pause_menu()
             continue
 
@@ -129,30 +267,6 @@ def _run_branch_center(ctx: typer.Context) -> None:
                 {"action": "exists", "branch_name": branch_name, "repo_path": repo_path},
             )
         ).get("exists", False)
-
-        if action == "switch":
-            if not exists:
-                console.print(
-                    Panel(
-                        f"[bold red]{t('menu_branch_switch_missing', branch=branch_name)}[/bold red]",
-                        border_style="red",
-                    )
-                )
-                _pause_menu()
-                continue
-
-            switch_res = run_async(
-                kernel.run(
-                    "core/git-branch",
-                    {"action": "switch", "branch_name": branch_name, "repo_path": repo_path},
-                )
-            )
-            if switch_res.get("success"):
-                console.print(f"[bold green]{t('menu_branch_switch_ok', branch=branch_name)}[/bold green]")
-            else:
-                console.print(f"[bold red]{switch_res.get('error', t('menu_branch_generic_error'))}[/bold red]")
-            _pause_menu()
-            continue
 
         # action == create_switch
         if exists:

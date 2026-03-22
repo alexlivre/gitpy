@@ -1,30 +1,23 @@
-"""
-Central module for git-branch functionality.
-"""
+"""Central module for git-branch functionality."""
 import logging
 import os
 import re
 import subprocess
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-# Configuração de Logs
 logger = logging.getLogger("git-branch")
-
-# Padrão regex para validação de nomes de branches Git
-# Baseado nas regras do Git: não pode começar com -, conter espaços, ou ter caracteres inválidos
-BRANCH_NAME_PATTERN = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*$')
+BRANCH_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$")
 
 
 def run_git_cmd(args: list, cwd: str) -> str:
-    """Helper para executar comandos git de leitura."""
     try:
         result = subprocess.run(
             ["git"] + args,
             cwd=cwd,
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            errors='replace'
+            encoding="utf-8",
+            errors="replace",
         )
         if result.returncode != 0:
             raise Exception(result.stderr.strip())
@@ -34,204 +27,136 @@ def run_git_cmd(args: list, cwd: str) -> str:
 
 
 def validate_branch_name(branch_name: str) -> Dict[str, Any]:
-    """
-    Valida se o nome da branch segue as regras do Git.
-    
-    Args:
-        branch_name: Nome da branch a validar
-        
-    Returns:
-        Dict com validação e mensagem de erro se aplicável
-    """
     if not branch_name:
-        return {
-            "valid": False,
-            "error": "Nome da branch não pode ser vazio."
-        }
-    
+        return {"valid": False, "error": "Nome da branch não pode ser vazio."}
     if len(branch_name) > 255:
-        return {
-            "valid": False,
-            "error": "Nome da branch muito longo (máximo 255 caracteres)."
-        }
-    
-    # Nomes reservados pelo Git
-    reserved_names = {"HEAD", "master", "main", "develop", "feature", "release", "hotfix"}
-    if branch_name in reserved_names:
-        return {
-            "valid": False,
-            "error": f"'{branch_name}' é um nome reservado pelo Git."
-        }
-    
-    # Verifica se corresponde ao padrão
+        return {"valid": False, "error": "Nome da branch muito longo (máximo 255 caracteres)."}
+    if branch_name in {"HEAD", "master", "main", "develop", "feature", "release", "hotfix"}:
+        return {"valid": False, "error": f"'{branch_name}' é um nome reservado pelo Git."}
     if not BRANCH_NAME_PATTERN.match(branch_name):
         return {
             "valid": False,
-            "error": "Nome da branch contém caracteres inválidos. Use apenas letras, números, pontos, hífens e underscores, e não comece com caracteres especiais."
+            "error": "Nome da branch contém caracteres inválidos. Use letras, números, pontos, hífens e underscores.",
         }
-    
     return {"valid": True}
 
 
+def _get_current_branch(repo_path: str) -> str:
+    current = run_git_cmd(["branch", "--show-current"], repo_path)
+    if current:
+        return current
+    current = run_git_cmd(["rev-parse", "--abbrev-ref", "HEAD"], repo_path)
+    return current or "HEAD"
+
+
+def _list_branches(repo_path: str) -> Dict[str, Any]:
+    raw = run_git_cmd(["branch", "-a"], repo_path)
+    current = _get_current_branch(repo_path)
+    local_branches: List[str] = []
+    remote_branches: List[str] = []
+    all_branch_names = set()
+
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("*"):
+            line = line[1:].strip()
+        if line.startswith("remotes/"):
+            remote_ref = line[len("remotes/"):]
+            if " -> " in remote_ref:
+                continue
+            remote_branches.append(remote_ref)
+            name = remote_ref.split("/", 1)[1] if "/" in remote_ref else remote_ref
+            if name:
+                all_branch_names.add(name)
+            continue
+        local_branches.append(line)
+        all_branch_names.add(line)
+
+    return {
+        "success": True,
+        "current_branch": current,
+        "local_branches": local_branches,
+        "remote_branches": remote_branches,
+        "all_branch_names": sorted(all_branch_names),
+    }
+
+
 def process(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Processa operações relacionadas a branches Git.
-    
-    Args:
-        payload: {
-            "action": str,        # "create", "switch", "current", "exists", "validate"
-            "branch_name": str,   # Nome da branch (opcional para algumas ações)
-            "repo_path": str,     # Caminho do repositório
-            "cid": str            # Correlation ID (opcional)
-        }
-    """
     action = payload.get("action")
     branch_name = payload.get("branch_name")
     repo_path = payload.get("repo_path")
     cid = payload.get("cid", "unknown")
-    
+
     if not repo_path or not os.path.isdir(repo_path):
         return {"success": False, "error": "INVALID_PATH", "message": "Caminho do repositório inválido.", "cid": cid}
-    
     if not action:
         return {"success": False, "error": "MISSING_ACTION", "message": "Ação não especificada.", "cid": cid}
-    
+
     try:
-        # Verifica se estamos em um repositório Git
         run_git_cmd(["rev-parse", "--is-inside-work-tree"], repo_path)
-    except Exception as e:
-        return {"success": False, "error": "NOT_GIT_REPO", "message": f"Não é um repositório Git: {str(e)}", "cid": cid}
-    
+    except Exception as exc:
+        return {"success": False, "error": "NOT_GIT_REPO", "message": f"Não é um repositório Git: {exc}", "cid": cid}
+
     try:
         if action == "validate":
             if not branch_name:
-                return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido para validação.", "cid": cid}
-            
+                return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
             validation = validate_branch_name(branch_name)
-            return {
-                "success": validation["valid"],
-                "valid": validation["valid"],
-                "error": validation.get("error")
-            }
-        
-        elif action == "current":
-            try:
-                current = run_git_cmd(["branch", "--show-current"], repo_path)
-                return {
-                    "success": True,
-                    "current_branch": current
-                }
-            except Exception as e:
-                # Se não conseguir obter branch atual (repo novo sem commits)
-                try:
-                    # Tenta obter branch atual de outra forma
-                    current = run_git_cmd(["rev-parse", "--abbrev-ref", "HEAD"], repo_path)
-                    return {
-                        "success": True,
-                        "current_branch": current
-                    }
-                except Exception:
-                    return {
-                        "success": True,
-                        "current_branch": "HEAD"  # Repo sem commits
-                    }
-        
-        elif action == "exists":
+            return {"success": validation["valid"], "valid": validation["valid"], "error": validation.get("error"), "cid": cid}
+
+        if action == "current":
+            return {"success": True, "current_branch": _get_current_branch(repo_path), "cid": cid}
+
+        if action == "list":
+            result = _list_branches(repo_path)
+            result["cid"] = cid
+            return result
+
+        if action == "exists":
             if not branch_name:
                 return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
-            
-            try:
-                # Lista todas as branches (locais e remotas)
-                branches = run_git_cmd(["branch", "-a"], repo_path)
-                # Remove prefixos e espaços
-                branch_list = []
-                for line in branches.splitlines():
-                    line = line.strip()
-                    if line.startswith("*"):
-                        line = line[1:].strip()
-                    # Remove remotes/ prefix
-                    if "/" in line:
-                        line = line.split("/")[-1]
-                    branch_list.append(line)
-                
-                exists = branch_name in branch_list
-                return {
-                    "success": True,
-                    "exists": exists,
-                    "branches": branch_list
-                }
-            except Exception as e:
-                return {"success": False, "error": "BRANCH_CHECK_FAIL", "message": f"Erro ao verificar branches: {str(e)}", "cid": cid}
-        
-        elif action == "create":
+            listed = _list_branches(repo_path)
+            exists = branch_name in listed.get("all_branch_names", [])
+            return {"success": True, "exists": exists, "branches": listed.get("all_branch_names", []), "cid": cid}
+
+        if action == "create":
             if not branch_name:
                 return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
-            
-            # Primeiro valida o nome
             validation = validate_branch_name(branch_name)
             if not validation["valid"]:
-                return {
-                    "success": False,
-                    "error": "INVALID_BRANCH_NAME",
-                    "message": f"Nome de branch inválido: {validation['error']}",
-                    "cid": cid
-                }
-            
-            try:
-                # Verifica se já existe
-                exists_check = process({
-                    "action": "exists",
-                    "branch_name": branch_name,
-                    "repo_path": repo_path
-                })
-                
-                if exists_check.get("exists"):
-                    return {
-                        "success": False,
-                        "error": f"Branch '{branch_name}' já existe."
-                    }
-                
-                # Cria a branch
-                run_git_cmd(["branch", branch_name], repo_path)
-                
-                return {
-                    "success": True,
-                    "message": f"Branch '{branch_name}' criada com sucesso."
-                }
-            except Exception as e:
-                return {"success": False, "error": "BRANCH_CREATE_FAIL", "message": f"Erro ao criar branch: {str(e)}", "cid": cid}
-        
-        elif action == "switch":
+                return {"success": False, "error": "INVALID_BRANCH_NAME", "message": f"Nome de branch inválido: {validation['error']}", "cid": cid}
+            if process({"action": "exists", "branch_name": branch_name, "repo_path": repo_path}).get("exists"):
+                return {"success": False, "error": f"Branch '{branch_name}' já existe.", "cid": cid}
+            run_git_cmd(["branch", branch_name], repo_path)
+            return {"success": True, "message": f"Branch '{branch_name}' criada com sucesso.", "cid": cid}
+
+        if action == "switch":
             if not branch_name:
                 return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
-            
-            try:
-                # Verifica se a branch existe
-                exists_check = process({
-                    "action": "exists", 
-                    "branch_name": branch_name,
-                    "repo_path": repo_path
-                })
-                
-                if not exists_check.get("exists"):
-                    return {
-                        "success": False,
-                        "error": f"Branch '{branch_name}' não existe."
-                    }
-                
-                # Alterna para a branch
-                run_git_cmd(["checkout", branch_name], repo_path)
-                
-                return {
-                    "success": True,
-                    "message": f"Alternado para branch '{branch_name}'."
-                }
-            except Exception as e:
-                return {"success": False, "error": "BRANCH_SWITCH_FAIL", "message": f"Erro ao alternar branch: {str(e)}", "cid": cid}
-        
-        else:
-            return {"success": False, "error": "UNSUPPORTED_ACTION", "message": f"Ação '{action}' não suportada.", "cid": cid}
-    
-    except Exception as e:
-        logger.error(f"Erro em git-branch: {str(e)}")
-        return {"success": False, "error": "UNEXPECTED_ERROR", "message": f"Erro inesperado: {str(e)}", "cid": cid}
+            if not process({"action": "exists", "branch_name": branch_name, "repo_path": repo_path}).get("exists"):
+                return {"success": False, "error": f"Branch '{branch_name}' não existe.", "cid": cid}
+            run_git_cmd(["checkout", branch_name], repo_path)
+            return {"success": True, "message": f"Alternado para branch '{branch_name}'.", "cid": cid}
+
+        if action == "delete":
+            if not branch_name:
+                return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
+            if branch_name == _get_current_branch(repo_path):
+                return {"success": False, "error": "CANNOT_DELETE_CURRENT", "message": "Não é possível deletar a branch atual.", "cid": cid}
+            force = bool(payload.get("force", False))
+            run_git_cmd(["branch", "-D" if force else "-d", branch_name], repo_path)
+            return {"success": True, "message": f"Branch '{branch_name}' deletada com sucesso.", "cid": cid}
+
+        if action == "push_branch":
+            if not branch_name:
+                return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
+            remote = payload.get("remote", "origin")
+            run_git_cmd(["push", "-u", remote, branch_name], repo_path)
+            return {"success": True, "message": f"Branch '{branch_name}' enviada para '{remote}'.", "cid": cid}
+
+        return {"success": False, "error": "UNSUPPORTED_ACTION", "message": f"Ação '{action}' não suportada.", "cid": cid}
+    except Exception as exc:
+        logger.error("Erro em git-branch: %s", exc)
+        return {"success": False, "error": "UNEXPECTED_ERROR", "message": f"Erro inesperado: {exc}", "cid": cid}

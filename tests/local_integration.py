@@ -6,7 +6,7 @@ import shutil
 import sys
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 # Ensure app directory is in path
 sys.path.insert(0, os.path.abspath(
@@ -118,7 +118,8 @@ class TestLocalIntegration(unittest.TestCase):
         # Check for simple string presence or part of it.
         self.assertIn("OPENAI", result.stdout)
 
-    @patch("launcher._run_auto_with_guards")
+    @patch("launcher_auto._run_auto_with_guards")
+    @patch("launcher_menu._pause_menu", return_value=None)
     @patch("launcher_menu._inquirer_checkbox")
     @patch("launcher_menu._inquirer_text")
     @patch("launcher_menu._inquirer_select")
@@ -129,58 +130,98 @@ class TestLocalIntegration(unittest.TestCase):
         mock_select,
         mock_text,
         mock_checkbox,
+        _mock_pause,
         mock_run_auto,
     ):
         """Test gitpy menu -> Auto wizard passes all options."""
-        mock_select.side_effect = ["auto", "current", "groq"]  # main action, path mode, model (no exit because auto flow should complete)
-        mock_text.side_effect = [
-            "menu hint",             # message
-            "feature/menu-flow",     # branch
+        # Mock run_async dentro da função _collect_auto_options_from_menu
+        with patch("launcher_shared.run_async", return_value={"success": True, "branches": []}):
+            mock_select.side_effect = [
+                "auto",      # main action
+                "groq",      # model
+                "create",    # branch mode
+                "exit",      # back to main menu
+            ]
+            mock_text.side_effect = [
+                "menu hint",             # message
+                "feature/menu-flow",     # branch
+            ]
+            mock_checkbox.return_value = ["dry_run", "nobuild", "debug"]  # Selected boolean options
+
+            runner = CliRunner()
+            result = runner.invoke(app, ["--path", self.test_dir, "menu"])
+
+            if result.exit_code != 0:
+                print(f"\n[DEBUG] Exit Code: {result.exit_code}")
+                print(f"[DEBUG] Stdout: {result.stdout}")
+                print(f"[DEBUG] Exception: {result.exception}")
+
+            self.assertEqual(result.exit_code, 0)
+            mock_run_auto.assert_called_once()
+
+            call_args = mock_run_auto.call_args
+            called_ctx = call_args.args[0]
+            called_options = call_args.args[1]
+            called_confirm = call_args.kwargs.get("confirm_fn")
+
+            self.assertEqual(called_ctx.obj.get("path"), self.test_dir)
+            self.assertIsInstance(called_options, launcher.AutoOptions)
+            self.assertTrue(called_options.dry_run)
+            self.assertFalse(called_options.no_push)
+            self.assertTrue(called_options.nobuild)
+            self.assertTrue(called_options.debug)
+            self.assertFalse(called_options.yes)
+            self.assertEqual(called_options.model, "groq")
+            self.assertEqual(called_options.message, "menu hint")
+            self.assertEqual(called_options.branch, "feature/menu-flow")
+            self.assertTrue(callable(called_confirm))
+
+    @patch("launcher_auto._run_auto_with_guards")
+    @patch("launcher_auto.run_async")
+    @patch("launcher_auto.sys.stdout.isatty", return_value=False)
+    @patch("launcher_auto.sys.stdin.isatty", return_value=False)
+    def test_auto_non_interactive_skips_branch_selector(
+        self,
+        _mock_stdin_tty,
+        _mock_stdout_tty,
+        mock_run_async,
+        mock_run_auto,
+    ):
+        """Auto em não-TTY não deve abrir seleção de branch interativa."""
+        from launcher_shared import AutoOptions
+        from launcher_auto import _run_auto_with_branch_guards
+
+        mock_run_async.side_effect = [
+            {"success": True, "restored_files": []},
+            {"success": True, "files_moved": []},
+            {"success": True, "restored_files": []},
         ]
-        mock_checkbox.return_value = ["dry_run", "nobuild", "debug"]  # Selected boolean options
 
-        runner = CliRunner()
-        result = runner.invoke(app, ["--path", self.test_dir, "menu"])
+        options = AutoOptions(yes=True, branch=None)
+        ctx = SimpleNamespace(obj={"path": self.test_dir})
 
-        if result.exit_code != 0:
-            print(f"\n[DEBUG] Exit Code: {result.exit_code}")
-            print(f"[DEBUG] Stdout: {result.stdout}")
-            print(f"[DEBUG] Exception: {result.exception}")
+        _run_auto_with_branch_guards(ctx, options, confirm_fn=lambda _: True)
 
-        self.assertEqual(result.exit_code, 0)
-        mock_run_auto.assert_called_once()
+        self.assertIsNone(options.branch)
+        self.assertTrue(mock_run_auto.called)
+        self.assertEqual(mock_run_async.call_count, 3)
 
-        call_args = mock_run_auto.call_args
-        called_ctx = call_args.args[0]
-        called_options = call_args.args[1]
-        called_confirm = call_args.kwargs.get("confirm_fn")
-
-        self.assertEqual(called_ctx.obj.get("path"), self.test_dir)
-        self.assertIsInstance(called_options, launcher.AutoOptions)
-        self.assertTrue(called_options.dry_run)
-        self.assertFalse(called_options.no_push)
-        self.assertTrue(called_options.nobuild)
-        self.assertTrue(called_options.debug)
-        self.assertFalse(called_options.yes)
-        self.assertEqual(called_options.model, "groq")
-        self.assertEqual(called_options.message, "menu hint")
-        self.assertEqual(called_options.branch, "feature/menu-flow")
-        self.assertTrue(callable(called_confirm))
-
-    @patch("launcher._run_check_ai_diagnostics")
+    @patch("launcher_diagnostics._run_check_ai_diagnostics")
+    @patch("launcher_menu._pause_menu", return_value=None)
     @patch("launcher_menu._inquirer_select")
     @patch("launcher._is_interactive_terminal", return_value=True)
     def test_menu_check_ai_runs_diagnostics(
         self,
         _mock_tty,
         mock_select,
+        _mock_pause,
         mock_diagnostics,
     ):
         """Test gitpy menu -> Check AI triggers diagnostics path."""
         mock_select.side_effect = ["check_ai", "exit"]
-        runner = CliRunner()
-        result = runner.invoke(app, ["menu"])
-        self.assertEqual(result.exit_code, 0)
+        from launcher_menu import _run_menu_mode
+        ctx = SimpleNamespace(obj={"path": self.test_dir})
+        _run_menu_mode(ctx)
         mock_diagnostics.assert_called_once()
 
     @patch("subprocess.run")
@@ -212,7 +253,7 @@ class TestLocalIntegration(unittest.TestCase):
         self.assertIn("--summary", command)
         self.assertEqual(cwd, self.test_dir)
 
-    @patch("launcher._run_branch_center")
+    @patch("launcher_branch._run_branch_center")
     @patch("launcher_menu._inquirer_select")
     @patch("launcher._is_interactive_terminal", return_value=True)
     def test_menu_branch_center_dispatches(
@@ -223,11 +264,9 @@ class TestLocalIntegration(unittest.TestCase):
     ):
         """Test gitpy menu -> Branch Center dispatch."""
         mock_select.side_effect = ["branch", "exit"]
-
-        runner = CliRunner()
-        result = runner.invoke(app, ["menu"])
-
-        self.assertEqual(result.exit_code, 0)
+        from launcher_menu import _run_menu_mode
+        ctx = SimpleNamespace(obj={"path": self.test_dir})
+        _run_menu_mode(ctx)
         mock_branch_center.assert_called_once()
 
     @patch("launcher._run_menu_mode")
