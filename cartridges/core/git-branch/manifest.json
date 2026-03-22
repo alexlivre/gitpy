@@ -16,7 +16,10 @@
         "switch", 
         "current",
         "exists",
-        "validate"
+        "validate",
+        "delete",
+        "delete_multiple",
+        "push_branch"
     ],
     "security_level": "medium"
 }

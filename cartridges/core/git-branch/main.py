@@ -1,7 +1,9 @@
 """Central module for git-branch functionality."""
 import logging
 import os
+import random
 import re
+import string
 import subprocess
 from typing import Any, Dict, List
 
@@ -39,6 +41,18 @@ def validate_branch_name(branch_name: str) -> Dict[str, Any]:
             "error": "Nome da branch contém caracteres inválidos. Use letras, números, pontos, hífens e underscores.",
         }
     return {"valid": True}
+
+
+def generate_confirmation_code() -> str:
+    """Generate confirmation code in format LETTER-NUMBER-LETTER-LETTER."""
+    letters = string.ascii_uppercase
+    numbers = string.digits
+    return (
+        random.choice(letters)
+        + random.choice(numbers)
+        + random.choice(letters)
+        + random.choice(letters)
+    )
 
 
 def _get_current_branch(repo_path: str) -> str:
@@ -148,6 +162,69 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
             force = bool(payload.get("force", False))
             run_git_cmd(["branch", "-D" if force else "-d", branch_name], repo_path)
             return {"success": True, "message": f"Branch '{branch_name}' deletada com sucesso.", "cid": cid}
+
+        if action == "delete_multiple":
+            branches_to_delete = payload.get("branches_to_delete", [])
+            if not branches_to_delete:
+                return {"success": False, "error": "MISSING_BRANCHES_LIST", "message": "Lista de branches para deletar não fornecida.", "cid": cid}
+            
+            # Check if confirmation code is provided
+            confirmation_code = payload.get("confirmation_code")
+            if not confirmation_code:
+                code = generate_confirmation_code()
+                return {
+                    "success": False,
+                    "error": "CONFIRMATION_REQUIRED",
+                    "message": f"Para deletar {len(branches_to_delete)} branches, digite o código: {code}",
+                    "confirmation_code": code,
+                    "branches_count": len(branches_to_delete),
+                    "cid": cid,
+                }
+            
+            # Validate confirmation code
+            expected_code = payload.get("expected_code")
+            if confirmation_code.upper() != expected_code.upper():
+                return {"success": False, "error": "INVALID_CONFIRMATION", "message": "Código de confirmação inválido.", "cid": cid}
+            
+            # Check if any branch is the current branch
+            current_branch = _get_current_branch(repo_path)
+            if current_branch in branches_to_delete:
+                return {"success": False, "error": "CANNOT_DELETE_CURRENT", "message": f"Não é possível deletar a branch atual '{current_branch}'.", "cid": cid}
+            
+            # Delete each branch
+            results = []
+            success_count = 0
+            fail_count = 0
+            force = bool(payload.get("force", False))
+            
+            for branch in branches_to_delete:
+                try:
+                    # Check if branch exists
+                    if not process({"action": "exists", "branch_name": branch, "repo_path": repo_path}).get("exists"):
+                        results.append({"branch": branch, "success": False, "error": "Branch não encontrada."})
+                        fail_count += 1
+                        continue
+                    
+                    # Delete local branch
+                    run_git_cmd(["branch", "-D" if force else "-d", branch], repo_path)
+                    results.append({"branch": branch, "success": True, "message": "Branch deletada com sucesso."})
+                    success_count += 1
+                except Exception as exc:
+                    results.append({"branch": branch, "success": False, "error": str(exc)})
+                    fail_count += 1
+            
+            message = f"Operação concluída: {success_count} branches deletadas com sucesso."
+            if fail_count > 0:
+                message += f" {fail_count} falharam."
+            
+            return {
+                "success": True,
+                "message": message,
+                "results": results,
+                "success_count": success_count,
+                "fail_count": fail_count,
+                "cid": cid,
+            }
 
         if action == "push_branch":
             if not branch_name:

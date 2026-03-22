@@ -47,8 +47,7 @@ def _run_branch_center(ctx: typer.Context) -> None:
         if action == "bulk_delete":
             branch_choices = _build_branch_choices(local_branches, current_branch, include_current=False)
             prompt = t("menu_branch_bulk_delete_prompt")
-            confirm_msg = t("menu_branch_bulk_delete_confirm")
-            kernel_action = "delete"
+            kernel_action = "delete_multiple"
             payload_extra = {"force": False}
         else:
             branch_choices = _build_branch_choices(local_branches, current_branch, include_current=True)
@@ -75,6 +74,77 @@ def _run_branch_center(ctx: typer.Context) -> None:
             _pause_menu()
             return
 
+        if action == "bulk_delete":
+            # New confirmation flow for bulk delete
+            payload = {
+                "action": kernel_action,
+                "branches_to_delete": selected,
+                "repo_path": repo_path,
+                **payload_extra,
+            }
+            result = run_async(kernel.run("core/git-branch", payload))
+            
+            if not result.get("success") and result.get("error") == "CONFIRMATION_REQUIRED":
+                # Show confirmation code and ask for input
+                confirmation_code = result.get("confirmation_code", "")
+                branches_count = result.get("branches_count", len(selected))
+                
+                console.print(f"[bold yellow]{t('menu_branch_bulk_delete_confirmation_required', count=branches_count, code=confirmation_code)}[/bold yellow]")
+                
+                # Loop for code input with validation
+                while True:
+                    user_code = _inquirer_text(
+                        t("menu_branch_bulk_delete_confirmation_prompt"),
+                        qmark="🔒",
+                    ).strip()
+                    
+                    if not user_code:
+                        console.print(f"[yellow]{t('menu_branch_bulk_delete_cancelled')}[/yellow]")
+                        _pause_menu()
+                        return
+                    
+                    # Second call with confirmation code
+                    payload["confirmation_code"] = user_code
+                    payload["expected_code"] = confirmation_code
+                    result = run_async(kernel.run("core/git-branch", payload))
+                    
+                    if not result.get("success") and result.get("error") == "INVALID_CONFIRMATION":
+                        console.print(f"[red]{t('menu_branch_bulk_delete_confirmation_invalid')}[/red]")
+                        continue
+                    else:
+                        break
+            
+            if not result.get("success"):
+                error_text = result.get("message") or result.get("error") or t("menu_branch_generic_error")
+                console.print(f"[red]{error_text}[/red]")
+                _pause_menu()
+                return
+            
+            # Show results for delete_multiple
+            if action == "bulk_delete":
+                results = result.get("results", [])
+                success_count = result.get("success_count", 0)
+                fail_count = result.get("fail_count", 0)
+                
+                for item in results:
+                    if item.get("success"):
+                        console.print(f"[green]{t('menu_branch_bulk_item_ok', branch=item['branch'])}[/green]")
+                    else:
+                        error_text = item.get("error", t("menu_branch_generic_error"))
+                        console.print(f"[red]{t('menu_branch_bulk_item_fail', branch=item['branch'], error=error_text)}[/red]")
+                
+                console.print(
+                    Panel(
+                        f"[bold green]{t('menu_branch_bulk_summary_ok', count=success_count)}[/bold green]\n"
+                        f"[bold red]{t('menu_branch_bulk_summary_fail', count=fail_count)}[/bold red]",
+                        title=t("menu_branch_bulk_summary_title"),
+                        border_style="cyan",
+                    )
+                )
+                _pause_menu()
+                return
+        
+        # Original flow for bulk_push
         if not _inquirer_confirm(confirm_msg, default=False, qmark="🌿"):
             console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
             _pause_menu()

@@ -1,0 +1,99 @@
+{
+    "identity": {
+        "name": "git-tag",
+        "version": "1.0.0",
+        "description": "Git tag center cartridge for GitPy"
+    },
+    "io_contract": {
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": ["list", "create", "delete", "reset", "exists", "validate"],
+                    "description": "Tag operation to perform"
+                },
+                "tag_name": {
+                    "type": "string",
+                    "description": "Name of the tag"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Optional message for annotated tags"
+                },
+                "repo_path": {
+                    "type": "string",
+                    "description": "Path to the git repository"
+                },
+                "confirmation_code": {
+                    "type": "string",
+                    "description": "Confirmation code for destructive operations"
+                },
+                "cid": {
+                    "type": "string",
+                    "description": "Correlation ID for tracking"
+                }
+            },
+            "required": ["action", "repo_path"]
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "success": {
+                    "type": "boolean",
+                    "description": "Operation success status"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Human-readable message"
+                },
+                "local_tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of local tags"
+                },
+                "remote_tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of remote tags"
+                },
+                "confirmation_code": {
+                    "type": "string",
+                    "description": "Generated confirmation code"
+                },
+                "exists": {
+                    "type": "boolean",
+                    "description": "Whether tag exists"
+                },
+                "valid": {
+                    "type": "boolean",
+                    "description": "Whether tag name is valid"
+                },
+                "error": {
+                    "type": "string",
+                    "description": "Error code"
+                },
+                "cid": {
+                    "type": "string",
+                    "description": "Correlation ID for tracking"
+                }
+            }
+        }
+    },
+    "error_dictionary": {
+        "INVALID_PATH": "Caminho do repositório inválido.",
+        "NOT_GIT_REPO": "Não é um repositório Git válido.",
+        "MISSING_ACTION": "Ação não especificada.",
+        "UNSUPPORTED_ACTION": "Ação não suportada.",
+        "MISSING_TAG_NAME": "Nome da tag não fornecido.",
+        "INVALID_TAG_NAME": "Nome da tag inválido.",
+        "TAG_NOT_FOUND": "Tag não encontrada.",
+        "TAG_EXISTS": "Tag já existe.",
+        "CONFIRMATION_REQUIRED": "Código de confirmação necessário.",
+        "INVALID_CONFIRMATION": "Código de confirmação inválido.",
+        "DELETE_CURRENT_TAG": "Não é possível deletar a tag do commit atual.",
+        "RESET_DIRTY_WORKTREE": "Working tree sujo. Faça commit ou stash antes de resetar.",
+        "REMOTE_DELETE_FAILED": "Falha ao deletar tag no repositório remoto.",
+        "UNEXPECTED_ERROR": "Erro inesperado."
+    }
+}

@@ -27,6 +27,7 @@
 | **🚀 Multi-Provider** | **NOVO!** Suporte nativo para **OpenRouter** e **OpenAI GPT-5**. |
 | **🌍 Multi-Language** | **NOVO!** Suporte i18n (Inglês/Português) para interface e commits. |
 | **🌿 Modo Branch de Teste** | **NOVO!** Crie/use branches de teste com flag `--branch` para operações seguras. |
+| **🏷️ Central de Tags** | **NOVO!** Gerenciamento completo de tags com confirmação forte para operações destrutivas. |
 
 ---
 
@@ -83,6 +84,7 @@ gitpy menu
 Cobertura do menu:
 - O wizard de `Auto` expõe todas as opções atuais: `path`, `model`, `message`, `branch`, `dry_run`, `no_push`, `nobuild`, `debug`, `yes`.
 - A `Central de Branches` inclui operações específicas: branch atual, listar locais/remotas, validar nome, criar+trocar e trocar para branch existente.
+- `Central de Tags` oferece operações completas: listar locais/remotas, criar leves/anotadas, deletar com confirmação, resetar repositório para tag.
 - `Check AI` executa o mesmo diagnóstico de `python launcher.py check-ai`.
 - `Resetar Repositório` abre o `git_reset_to_github.py` em modos guiados (`summary`, `dry-run`, `reset completo`).
 - `Ver Recursos` mostra o mapa completo dos recursos do GitPy (fluxos CLI, wrappers, opções globais, i18n).
@@ -331,6 +333,50 @@ main
 ```
 
 Isso transforma o GitPy em uma ferramenta completa de gerenciamento de branches, não apenas para criar branches de teste!
+
+---
+
+## 🏷️ Central de Tags
+
+**NOVO!** GitPy agora oferece central completa de tags com confirmação forte para operações destrutivas.
+
+### Como funciona:
+Acesse a Central de Tags através do menu interativo:
+```bash
+python launcher.py menu
+# Selecione "Central de Tags"
+```
+
+### Operações Disponíveis:
+- **Listar Tags**: Visualizar todas as tags locais e remotas no seu repositório
+- **Criar Tag**: Criar tags leves ou anotadas com mensagens opcionais
+- **Deletar Tag**: Remover tags (local e remota) com confirmação forte
+- **Resetar para Tag**: Resetar seu repositório para uma versão específica de tag com confirmação forte
+
+### Sistema de Confirmação Forte:
+Para operações destrutivas (delete e reset), GitPy usa um **código de confirmação de 4 caracteres** no formato `LETRA-NÚMERO-LETRA-LETRA` (ex: `B2CR`):
+1. GitPy gera um código aleatório
+2. Você deve digitar o código exato para confirmar (case-insensitive)
+3. Isso previne deleções ou resets acidentais
+
+**Confirmação Case-Insensitive**: Você pode digitar o código em qualquer variação de maiúsculas/minúsculas:
+- Gerado: `K7OT` → Você pode digitar: `k7ot`, `K7ot`, `k7OT`, etc.
+
+### Exemplos de Uso:
+```bash
+# Central interativa de tags
+python launcher.py menu
+# Selecione "Central de Tags" → Escolha operação
+
+# Uso direto do cartucho (avançado)
+python cartridges/core/git-tag/main.py --json '{"action": "list", "repo_path": ".", "cid": "test"}'
+```
+
+### Recursos de Segurança:
+- **Aviso de Deleção**: Aviso claro que deleção afeta AMBAS as tags local e remota
+- **Aviso de Reset**: Aviso claro que reset mudará o estado do seu repositório
+- **Validação de Código**: Correspondência case-insensitive de código previne confirmação acidental
+- **Verificação de Working Tree**: Operações de reset exigem working tree limpa
 
 ---
 

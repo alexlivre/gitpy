@@ -372,6 +372,7 @@ def _run_menu_mode(ctx: typer.Context) -> None:
             choices=[
                 {"name": f"{t('menu_action_auto')}  [dim]{t('menu_action_auto_desc')}[/dim]", "value": "auto"},
                 {"name": f"{t('menu_action_branch')}  [dim]{t('menu_action_branch_desc')}[/dim]", "value": "branch"},
+                {"name": f"{t('menu_action_tag')}  [dim]{t('menu_action_tag_desc')}[/dim]", "value": "tag"},
                 {"name": f"{t('menu_action_check_ai')}  [dim]{t('menu_action_check_ai_desc')}[/dim]", "value": "check_ai"},
                 {"name": f"{t('menu_action_reset')}  [dim]{t('menu_action_reset_desc')}[/dim]", "value": "reset"},
                 {"name": f"{t('menu_action_resources')}  [dim]{t('menu_action_resources_desc')}[/dim]", "value": "resources"},
@@ -392,6 +393,12 @@ def _run_menu_mode(ctx: typer.Context) -> None:
         if action == "branch":
             nav_stack.push("branch", "menu_subtitle_branch", t("menu_subtitle_branch"))
             _run_branch_center(ctx)
+            nav_stack.pop()
+            continue
+
+        if action == "tag":
+            nav_stack.push("tag", "menu_subtitle_tag", t("menu_subtitle_tag"))
+            _run_tag_center(ctx)
             nav_stack.pop()
             continue
 
@@ -483,3 +490,245 @@ def _get_menu_repo_status(ctx: typer.Context) -> Optional[str]:
         return t("menu_repo_status", repo=repo_name, branch=branch)
     except Exception:
         return None
+
+
+def _run_tag_center(ctx: typer.Context) -> None:
+    """Central de gerenciamento de tags."""
+    from launcher import _resolve_repo_path
+    from launcher_shared import run_async
+    from vibe_core import kernel
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.text import Text
+
+    console = Console()
+    repo_path = _resolve_repo_path(ctx)
+
+    while True:
+        _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+        action = _inquirer_select(
+            t("menu_tag_prompt"),
+            choices=[
+                {"name": t("menu_tag_action_list"), "value": "list"},
+                {"name": t("menu_tag_action_create"), "value": "create"},
+                {"name": t("menu_tag_action_delete"), "value": "delete"},
+                {"name": t("menu_tag_action_reset"), "value": "reset"},
+                {"name": t("menu_action_back"), "value": "back"},
+            ],
+            default="list",
+            pointer="❯",
+            qmark="🏷️",
+            amark="✓",
+            cycle=True,
+        )
+
+        if action == "back":
+            return
+
+        if action == "list":
+            _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+            console.print(f"[cyan]{t('menu_tag_list_title')}[/cyan]")
+            
+            result = run_async(kernel.run("core/git-tag", {"action": "list", "repo_path": repo_path}))
+            if result.get("success"):
+                local_tags = result.get("local_tags", [])
+                remote_tags = result.get("remote_tags", [])
+                
+                console.print(f"\n[bold]{t('menu_tag_list_local_title')}:[/bold]")
+                if local_tags:
+                    for tag in local_tags:
+                        console.print(f"  🏷️  {tag}")
+                else:
+                    console.print(f"  [dim]{t('menu_tag_list_empty')}[/dim]")
+                
+                console.print(f"\n[bold]{t('menu_tag_list_remote_title')}:[/bold]")
+                if remote_tags:
+                    for tag in remote_tags:
+                        console.print(f"  🌐 {tag}")
+                else:
+                    console.print(f"  [dim]{t('menu_tag_list_empty')}[/dim]")
+            else:
+                console.print(f"[red]{t('menu_tag_generic_error')}: {result.get('message', 'Unknown error')}[/red]")
+            
+            _pause_menu()
+            continue
+
+        if action == "create":
+            _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+            tag_name = _inquirer_text(t("menu_tag_name_prompt")).strip()
+            if not tag_name or tag_name.lower() == "back":
+                continue
+            
+            # Validar nome da tag
+            validation = run_async(kernel.run("core/git-tag", {"action": "validate", "tag_name": tag_name, "repo_path": repo_path}))
+            if not validation.get("valid"):
+                console.print(f"[red]{t('menu_tag_invalid_name').format(error=validation.get('error', 'Unknown'))}[/red]")
+                _pause_menu()
+                continue
+            
+            # Verificar se tag já existe
+            exists = run_async(kernel.run("core/git-tag", {"action": "exists", "tag_name": tag_name, "repo_path": repo_path}))
+            if exists.get("exists"):
+                console.print(f"[red]{t('menu_tag_exists').format(tag=tag_name)}[/red]")
+                _pause_menu()
+                continue
+            
+            # Escolher tipo de tag
+            tag_type = _inquirer_select(
+                t("menu_tag_create_type_prompt"),
+                choices=[
+                    {"name": t("menu_tag_create_light"), "value": "light"},
+                    {"name": t("menu_tag_create_annotated"), "value": "annotated"},
+                    {"name": t("menu_action_back"), "value": "back"},
+                ],
+                default="light",
+                pointer="❯",
+                qmark="🏷️",
+                amark="✓",
+                cycle=True,
+            )
+            
+            if tag_type == "back":
+                continue
+            
+            message = ""
+            if tag_type == "annotated":
+                message = _inquirer_text(t("menu_tag_message_prompt")).strip()
+                if message.lower() == "back":
+                    continue
+            
+            # Criar tag
+            payload = {"action": "create", "tag_name": tag_name, "repo_path": repo_path}
+            if message:
+                payload["message"] = message
+            
+            result = run_async(kernel.run("core/git-tag", payload))
+            if result.get("success"):
+                console.print(f"[green]{t('menu_tag_created').format(tag=tag_name)}[/green]")
+            else:
+                console.print(f"[red]{t('menu_tag_generic_error')}: {result.get('message', 'Unknown error')}[/red]")
+            
+            _pause_menu()
+            continue
+
+        if action == "delete":
+            _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+            
+            # Listar tags disponíveis
+            result = run_async(kernel.run("core/git-tag", {"action": "list", "repo_path": repo_path}))
+            if not result.get("success") or not result.get("local_tags"):
+                console.print(f"[yellow]{t('menu_tag_list_empty')}[/yellow]")
+                _pause_menu()
+                continue
+            
+            local_tags = result.get("local_tags", [])
+            tag_choices = [{"name": tag, "value": tag} for tag in local_tags]
+            tag_choices.append({"name": t("menu_action_back"), "value": "back"})
+            
+            selected_tag = _inquirer_select(
+                t("menu_tag_select_existing_prompt"),
+                choices=tag_choices,
+                default=local_tags[0] if local_tags else None,
+                pointer="❯",
+                qmark="🗑️",
+                amark="✓",
+                cycle=True,
+            )
+            
+            if selected_tag == "back":
+                continue
+            
+            # Primeira chamada para obter código de confirmação
+            delete_result = run_async(kernel.run("core/git-tag", {"action": "delete", "tag_name": selected_tag, "repo_path": repo_path}))
+            if delete_result.get("error") == "CONFIRMATION_REQUIRED":
+                confirmation_code = delete_result.get("confirmation_code")
+                
+                # Mostrar aviso e solicitar confirmação
+                console.print(f"\n[red bold]{t('menu_tag_delete_warning')}[/red bold]")
+                console.print(f"[yellow]{t('menu_tag_delete_confirm').format(code=confirmation_code)}[/yellow]")
+                
+                user_code = _inquirer_text(t("menu_tag_delete_code_prompt")).strip()
+                if user_code.lower() == "back":
+                    continue
+                
+                # Segunda chamada com confirmação
+                delete_result = run_async(kernel.run("core/git-tag", {
+                    "action": "delete", 
+                    "tag_name": selected_tag, 
+                    "repo_path": repo_path,
+                    "confirmation_code": user_code,
+                    "expected_code": confirmation_code
+                }))
+            
+            if delete_result.get("success"):
+                console.print(f"[green]{t('menu_tag_deleted').format(tag=selected_tag)}[/green]")
+            else:
+                error_msg = delete_result.get('message', 'Unknown error')
+                if delete_result.get("error") == "INVALID_CONFIRMATION":
+                    console.print(f"[red]{t('menu_tag_confirmation_invalid')}[/red]")
+                else:
+                    console.print(f"[red]{t('menu_tag_generic_error')}: {error_msg}[/red]")
+            
+            _pause_menu()
+            continue
+
+        if action == "reset":
+            _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+            
+            # Listar tags disponíveis
+            result = run_async(kernel.run("core/git-tag", {"action": "list", "repo_path": repo_path}))
+            if not result.get("success") or not result.get("local_tags"):
+                console.print(f"[yellow]{t('menu_tag_list_empty')}[/yellow]")
+                _pause_menu()
+                continue
+            
+            local_tags = result.get("local_tags", [])
+            tag_choices = [{"name": tag, "value": tag} for tag in local_tags]
+            tag_choices.append({"name": t("menu_action_back"), "value": "back"})
+            
+            selected_tag = _inquirer_select(
+                t("menu_tag_select_existing_prompt"),
+                choices=tag_choices,
+                default=local_tags[0] if local_tags else None,
+                pointer="❯",
+                qmark="🔄",
+                amark="✓",
+                cycle=True,
+            )
+            
+            if selected_tag == "back":
+                continue
+            
+            # Primeira chamada para obter código de confirmação
+            reset_result = run_async(kernel.run("core/git-tag", {"action": "reset", "tag_name": selected_tag, "repo_path": repo_path}))
+            if reset_result.get("error") == "CONFIRMATION_REQUIRED":
+                confirmation_code = reset_result.get("confirmation_code")
+                
+                # Mostrar aviso e solicitar confirmação
+                console.print(f"\n[red bold]{t('menu_tag_reset_warning').format(tag=selected_tag)}[/red bold]")
+                console.print(f"[yellow]{t('menu_tag_reset_confirm').format(code=confirmation_code)}[/yellow]")
+                
+                user_code = _inquirer_text(t("menu_tag_reset_code_prompt")).strip()
+                if user_code.lower() == "back":
+                    continue
+                
+                # Segunda chamada com confirmação
+                reset_result = run_async(kernel.run("core/git-tag", {
+                    "action": "reset", 
+                    "tag_name": selected_tag, 
+                    "repo_path": repo_path,
+                    "confirmation_code": user_code,
+                    "expected_code": confirmation_code
+                }))
+            
+            if reset_result.get("success"):
+                console.print(f"[green]{t('menu_tag_reset_success').format(tag=selected_tag)}[/green]")
+            else:
+                error_msg = reset_result.get('message', 'Unknown error')
+                if reset_result.get("error") == "INVALID_CONFIRMATION":
+                    console.print(f"[red]{t('menu_tag_confirmation_invalid')}[/red]")
+                else:
+                    console.print(f"[red]{t('menu_tag_generic_error')}: {error_msg}[/red]")
+            
+            _pause_menu()
+            continue

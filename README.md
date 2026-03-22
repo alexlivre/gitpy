@@ -27,6 +27,7 @@
 | **🚀 Multi-Provider** | **NEW!** Native support for **OpenRouter** and **OpenAI GPT-5**. |
 | **🌍 Multi-Language** | **NEW!** i18n support (English/Portuguese) for both interface and commits. |
 | **🌿 Test Branch Mode** | **NEW!** Create/use test branches with `--branch` flag for safe operations. |
+| **🏷️ Tag Center** | **NEW!** Complete tag management with strong confirmation for destructive operations. |
 
 ---
 
@@ -83,6 +84,7 @@ gitpy menu
 Menu coverage:
 - `Auto` wizard exposes all current options: `path`, `model`, `message`, `branch`, `dry_run`, `no_push`, `nobuild`, `debug`, `yes`.
 - `Branch Center` now includes branch-specific operations: current branch, list local/remote, validate name, create+switch, and switch existing branch.
+- `Tag Center` provides complete tag operations: list local/remote tags, create lightweight/annotated tags, delete with confirmation, reset repository to tag.
 - `Check AI` runs the same diagnostics flow as `python launcher.py check-ai`.
 - `Reset Repository` opens `git_reset_to_github.py` in guided modes (`summary`, `dry-run`, `full reset`).
 - `View Resources` shows the complete GitPy resource map (CLI flows, wrappers, global options, i18n).
@@ -331,6 +333,50 @@ main
 ```
 
 This makes GitPy a complete branch management tool, not just for creating test branches!
+
+---
+
+## 🏷️ Tag Center
+
+**NEW!** GitPy now provides complete tag center with strong confirmation for destructive operations.
+
+### How it works:
+Access the Tag Center through the interactive menu:
+```bash
+python launcher.py menu
+# Select "Tag Center"
+```
+
+### Available Operations:
+- **List Tags**: View all local and remote tags in your repository
+- **Create Tag**: Create lightweight or annotated tags with optional messages
+- **Delete Tag**: Remove tags (both local and remote) with strong confirmation
+- **Reset to Tag**: Reset your repository to a specific tag version with strong confirmation
+
+### Strong Confirmation System:
+For destructive operations (delete and reset), GitPy uses a **4-character confirmation code** in the format `LETTER-NUMBER-LETRA-LETRA` (ex: `B2CR`):
+1. GitPy generates a random code
+2. You must type the exact code to confirm (case-insensitive)
+3. This prevents accidental deletions or resets
+
+**Case-Insensitive Confirmation**: You can type the code in any case variation:
+- Generated: `K7OT` → You can type: `k7ot`, `K7ot`, `k7OT`, etc.
+
+### Usage Examples:
+```bash
+# Interactive tag center
+python launcher.py menu
+# Select "Tag Center" → Choose operation
+
+# Direct cartridge usage (advanced)
+python cartridges/core/git-tag/main.py --json '{"action": "list", "repo_path": ".", "cid": "test"}'
+```
+
+### Security Features:
+- **Delete Warning**: Clear warning that deletion affects BOTH local and remote tags
+- **Reset Warning**: Clear warning that reset will change your repository state
+- **Code Validation**: Case-insensitive code matching prevents accidental confirmation
+- **Working Tree Check**: Reset operations require clean working tree
 
 ---
 
