@@ -164,42 +164,72 @@ Regras:
     if hint:
         user_prompt += f"\nDica do desenvolvedor: '{hint}'"
 
-    # 5. Resolução de Modelo (Hierarquia: Payload > Global ENV > Provider ENV)
-    # Se 'model' não veio no payload (ex: via flag), tenta buscar no ambiente
+    # 5. Resolução de Modelo e Provedor (com Fallback)
+    # Se 'model' não veio no payload, tenta buscar no ambiente
     target_model = payload.get("model")
     if not target_model:
-        # Usa o modelo configurado via env_config
         target_model = env_config.AI_MODELS.get(provider, "")
-
-    # 6. Invocação do LLM (Adapter)
-    adapter_name = f"ai/ai-{provider}"  # ai/ai-openai, ai/ai-gemini...
-
-    try:
-        llm_res = await kernel.run(adapter_name, {
-            "prompt": user_prompt,
-            "system_instruction": system_prompt,
-            "model": target_model
-        })
-
-        if llm_res.get("error"):
+    
+    # 6. Invocação do LLM com Fallback automático
+    # Lista de provedores para tentar (inclui o escolhido + disponíveis como fallback)
+    providers_to_try = [provider]
+    
+    # Se o usuário não especificou explicitamente um provedor, adiciona fallbacks
+    if payload.get("allow_fallback", True):
+        available_providers = [p for p, key in env_config.API_KEYS.items() if key and p != provider]
+        # Ordena por prioridade: openrouter > groq > openai > gemini > ollama
+        priority = ["openrouter", "groq", "openai", "gemini", "ollama"]
+        available_providers.sort(key=lambda x: priority.index(x) if x in priority else 99)
+        providers_to_try.extend(available_providers)
+    
+    last_error = None
+    for attempt_provider in providers_to_try:
+        adapter_name = f"ai/ai-{attempt_provider}"
+        
+        # Obtém modelo para o provedor de fallback
+        if attempt_provider != provider:
+            target_model = env_config.AI_MODELS.get(attempt_provider, "")
+        
+        try:
+            llm_res = await kernel.run(adapter_name, {
+                "prompt": user_prompt,
+                "system_instruction": system_prompt,
+                "model": target_model
+            })
+            
+            if llm_res.get("error"):
+                # Se for erro de autenticação/conexão, tenta próximo provedor
+                error_msg = llm_res.get("message", "").lower()
+                if any(err in error_msg for err in ["auth", "key", "token", "credential", "api_key", "não encontrada"]):
+                    kernel.log("ai-brain", cid, f"Provedor {attempt_provider} falhou (auth), tentando fallback...", "WARN")
+                    last_error = llm_res
+                    continue
+                # Se for erro de conteúdo, não faz fallback
+                return {
+                    "success": False,
+                    "error": llm_res.get("error"),
+                    "message": llm_res.get("message", "Falha de comunicação ou contexto reportado pelo provedor de API.")
+                }
+            
+            # Sucesso!
+            raw_text = llm_res.get("text", "").strip()
+            generated_msg = _normalize_commit_message(raw_text, commit_lang)
+            
             return {
-                "success": False,
-                "error": llm_res.get("error"),
-                "message": llm_res.get("message", "Falha de comunicação ou contexto reportado pelo provedor de API.")
+                "success": True,
+                "commit_message": generated_msg,
+                "excluded_files": [],
+                "removed_files": [],
+                "provider_used": attempt_provider,
+                "redacted": redact_res.get("redacted_count", 0) > 0,
+                "fallback_used": attempt_provider != provider
             }
-
-        raw_text = llm_res.get("text", "").strip()
-
-        generated_msg = _normalize_commit_message(raw_text, commit_lang)
-
-        return {
-            "success": True,
-            "commit_message": generated_msg,
-            "excluded_files": [],  # Deprecated
-            "removed_files": [],  # Deprecated
-            "provider_used": provider,
-            "redacted": redact_res.get("redacted_count", 0) > 0
-        }
-
-    except Exception as e:
-        return {"success": False, "error": "LLM_FAIL", "message": str(e)}
+            
+        except Exception as e:
+            kernel.log("ai-brain", cid, f"Provedor {attempt_provider} erro: {str(e)}", "ERROR")
+            last_error = e
+            continue
+    
+    # Todos os provedores falharam
+    error_msg = str(last_error) if last_error else "Todos os provedores falharam"
+    return {"success": False, "error": "ALL_PROVIDERS_FAILED", "message": f"Nenhum provedor de IA disponível. Último erro: {error_msg}"}
