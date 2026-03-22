@@ -43,6 +43,16 @@ python launcher.py auto
 > python launcher.py auto --yes
 > ```
 
+> **Configuração de Idioma:** GitPy suporta múltiplos idiomas. Crie um arquivo `.env` (veja Configuração do Ambiente abaixo) para configurar:
+> - `LANGUAGE=en` para interface em inglês, `LANGUAGE=pt` para interface em português
+> - `COMMIT_LANGUAGE=en` para commits em inglês, `COMMIT_LANGUAGE=pt` para commits em português
+> 
+> Exemplo para interface em português com commits em inglês:
+> ```env
+> LANGUAGE=pt
+> COMMIT_LANGUAGE=en
+> ```
+
 O launcher iniciará o processo de automação inteligente:
 1.  **Stealth Stash:** Oculta seus arquivos privados (`.gitpy-private`).
 2.  **Scanner:** Verifica mudanças e sugere adições ao `.gitignore`.
@@ -85,6 +95,51 @@ Notas de compatibilidade:
 - Os fluxos CLI existentes continuam iguais (`auto`, `check-ai`, todas as flags e ordem de uso).
 - Em ambiente não interativo (CI/pipes, sem TTY), o GitPy não tenta abrir menus automaticamente.
 - `InquirerPy` agora faz parte das dependências (`pip install -r requirements.txt`).
+
+---
+
+## 📦 Configuração do Ambiente
+
+GitPy requer um arquivo `.env` no diretório raiz para configuração. Copie `.env.example` para `.env`:
+
+```bash
+cp .env.example .env
+```
+
+### Configuração Obrigatória
+
+```env
+# Provedor de IA (auto, openrouter, groq, openai, gemini, ollama)
+AI_PROVIDER=auto
+
+# Configurações de Idioma (Independentes)
+LANGUAGE=en                    # Idioma da interface (en, pt)
+COMMIT_LANGUAGE=en           # Idioma das mensagens de commit (en, pt)
+
+# Chaves de API (escolha pelo menos uma)
+GROQ_API_KEY=sua_chave_groq_aqui
+OPENROUTER_API_KEY=sua_chave_openrouter_aqui
+OPENAI_API_KEY=sua_chave_openai_aqui
+GEMINI_API_KEY=sua_chave_gemini_aqui
+```
+
+### Exemplos de Configuração de Idioma
+
+```env
+# Interface em português, commits em inglês
+LANGUAGE=pt
+COMMIT_LANGUAGE=en
+
+# Interface em inglês, commits em português  
+LANGUAGE=en
+COMMIT_LANGUAGE=pt
+
+# Ambos em inglês (padrão)
+LANGUAGE=en
+COMMIT_LANGUAGE=en
+```
+
+Para opções completas de configuração, veja a seção [Internacionalização](#-internacionalização-multi-language) abaixo.
 
 ### Exemplos de Uso
 

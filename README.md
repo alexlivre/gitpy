@@ -43,6 +43,16 @@ python launcher.py auto
 > python launcher.py auto --yes
 > ```
 
+> **Language Configuration:** GitPy supports multiple languages. Create a `.env` file (see Environment Setup below) to configure:
+> - `LANGUAGE=en` for English interface, `LANGUAGE=pt` for Portuguese interface
+> - `COMMIT_LANGUAGE=en` for English commits, `COMMIT_LANGUAGE=pt` for Portuguese commits
+> 
+> Example for Portuguese interface with English commits:
+> ```env
+> LANGUAGE=pt
+> COMMIT_LANGUAGE=en
+> ```
+
 The launcher will start the intelligent automation process:
 1.  **Stealth Stash:** Hides your private files (`.gitpy-private`).
 2.  **Scanner:** Checks for changes and suggests additions to `.gitignore`.
@@ -85,6 +95,51 @@ Compatibility notes:
 - Existing CLI flows are unchanged (`auto`, `check-ai`, all flags and ordering continue to work).
 - In non-interactive environments (CI/pipes, no TTY), GitPy will not try to open menus automatically.
 - `InquirerPy` is now part of dependencies (`pip install -r requirements.txt`).
+
+---
+
+## 📦 Environment Setup
+
+GitPy requires a `.env` file in the root directory for configuration. Copy `.env.example` to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+### Required Configuration
+
+```env
+# AI Provider (auto, openrouter, groq, openai, gemini, ollama)
+AI_PROVIDER=auto
+
+# Language Settings (Independent)
+LANGUAGE=en                    # Interface language (en, pt)
+COMMIT_LANGUAGE=en           # Commit message language (en, pt)
+
+# API Keys (choose at least one)
+GROQ_API_KEY=your_groq_key_here
+OPENROUTER_API_KEY=your_openrouter_key_here
+OPENAI_API_KEY=your_openai_key_here
+GEMINI_API_KEY=your_gemini_key_here
+```
+
+### Language Configuration Examples
+
+```env
+# Portuguese interface, English commits
+LANGUAGE=pt
+COMMIT_LANGUAGE=en
+
+# English interface, Portuguese commits  
+LANGUAGE=en
+COMMIT_LANGUAGE=pt
+
+# Both in English (default)
+LANGUAGE=en
+COMMIT_LANGUAGE=en
+```
+
+For complete configuration options, see [Internationalization](#-internationalization-multi-language) section below.
 
 ### Usage Examples
 
