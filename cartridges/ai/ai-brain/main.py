@@ -3,7 +3,8 @@ Central module for ai-brain functionality.
 """
 import os
 import re
-from typing import Any, Dict
+import json
+from typing import Any, Dict, Optional
 
 from vibe_core import kernel
 # Importa configuração para garantir que o ambiente esteja carregado
@@ -34,6 +35,102 @@ _CATEGORY_MAP = {
 
 _MAX_DIFF_CONTEXT = 12000
 
+# Cache para templates de prompt carregados
+_PROMPT_CACHE: Dict[str, Dict[str, str]] = {}
+
+
+def _normalize_language(lang: str) -> str:
+    """
+    Normaliza códigos de idioma para o formato padrão.
+    pt-BR -> pt, en-US -> en, etc.
+    """
+    if not lang:
+        return "en"
+    # Converte para minúsculo e pega apenas a parte antes do hífen
+    normalized = lang.lower().split("-")[0]
+    return normalized if normalized in ["pt", "en"] else "en"
+
+
+def _load_prompt_template(lang: str) -> Dict[str, str]:
+    """
+    Carrega template de prompt do arquivo JSON.
+    Usa cache para evitar recarregamento.
+    Fallback para inglês se idioma não suportado.
+    """
+    normalized_lang = _normalize_language(lang)
+    
+    # Verifica cache
+    if normalized_lang in _PROMPT_CACHE:
+        return _PROMPT_CACHE[normalized_lang]
+    
+    # Caminho do arquivo de template
+    prompts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
+    template_path = os.path.join(prompts_dir, f"{normalized_lang}.json")
+    
+    # Tenta carregar o template do idioma solicitado
+    if os.path.exists(template_path):
+        try:
+            with open(template_path, "r", encoding="utf-8") as f:
+                template = json.load(f)
+                _PROMPT_CACHE[normalized_lang] = template
+                kernel.log("ai-brain", None, f"Template carregado: {normalized_lang}", "DEBUG")
+                return template
+        except Exception as e:
+            kernel.log("ai-brain", None, f"Erro ao carregar template {normalized_lang}: {e}", "WARN")
+    
+    # Fallback para inglês
+    if normalized_lang != "en":
+        kernel.log("ai-brain", None, f"Template {normalized_lang} não encontrado, usando fallback en", "WARN")
+        return _load_prompt_template("en")
+    
+    # Se nem inglês existir, retorna template hardcoded de emergência
+    kernel.log("ai-brain", None, "Templates não encontrados, usando fallback hardcoded", "ERROR")
+    return {
+        "system_prompt": "You are a Senior DevOps Assistant. Write clear Git commit messages.",
+        "user_prompt_template": "Generate a commit for:\n{diff}",
+        "hint_template": "\nHint: '{hint}'",
+        "truncated_hint": "",
+        "fallback_title": "update: general changes",
+        "fallback_detail": "details unavailable",
+        "truncation_warning": "",
+        "no_context_error": "No diff or hint to work with."
+    }
+
+
+def _get_system_prompt(lang: str, style_guide: str, is_truncated: bool = False) -> str:
+    """
+    Monta o system prompt com style_guide embutido.
+    """
+    template = _load_prompt_template(lang)
+    system_prompt = template["system_prompt"].format(style_guide=style_guide)
+    
+    if is_truncated:
+        truncation_warning = template.get("truncation_warning", "")
+        if truncation_warning:
+            system_prompt += f"\n{truncation_warning}"
+    
+    return system_prompt
+
+
+def _get_user_prompt(lang: str, diff: str, hint: str, is_truncated: bool) -> str:
+    """
+    Monta o user prompt com templates dinâmicos.
+    """
+    template = _load_prompt_template(lang)
+    
+    truncated_hint = template.get("truncated_hint", "") if is_truncated else ""
+    user_prompt = template["user_prompt_template"].format(
+        diff=diff,
+        truncated_hint=truncated_hint
+    )
+    
+    if hint:
+        hint_template = template.get("hint_template", "\nHint: '{hint}'")
+        user_prompt += hint_template.format(hint=hint)
+    
+    
+    return user_prompt
+
 
 def _build_diff_context(diff_text: str) -> str:
     if len(diff_text) <= _MAX_DIFF_CONTEXT:
@@ -57,11 +154,14 @@ def _build_diff_context(diff_text: str) -> str:
 def _normalize_commit_message(raw_text: str, commit_lang: str) -> str:
     clean = raw_text.replace("```", "").replace("commit:", "").strip()
     lines = [line.strip() for line in clean.splitlines() if line.strip()]
+    
+    # Carrega template para fallbacks
+    template = _load_prompt_template(commit_lang)
 
     if not lines:
-        fallback = "update: general changes" if "en" in commit_lang else "update: ajustes gerais"
-        fallback_detail = "details unavailable" if "en" in commit_lang else "detalhes não informados"
-        return f"{fallback}\n\n- t {fallback_detail}"
+        fallback_title = template.get("fallback_title", "update: general changes")
+        fallback_detail = template.get("fallback_detail", "details unavailable")
+        return f"{fallback_title}\n\n- t {fallback_detail}"
 
     title = lines[0][:50].strip()
     body_lines = lines[1:]
@@ -84,7 +184,7 @@ def _normalize_commit_message(raw_text: str, commit_lang: str) -> str:
             normalized_body.append(f"- {marker} {content}")
 
     if not normalized_body:
-        fallback_detail = "details unavailable" if "en" in commit_lang else "detalhes não informados"
+        fallback_detail = template.get("fallback_detail", "details unavailable")
         normalized_body = [f"- t {fallback_detail}"]
 
     return f"{title}\n\n" + "\n".join(normalized_body)
@@ -102,7 +202,8 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     hint = payload.get("hint")  # Dica do usuário (-m)
 
     if not diff and not hint:
-        return {"error": "NO_CONTEXT", "message": "Sem diff ou dica para trabalhar."}
+        template = _load_prompt_template(payload.get("commit_lang", "en"))
+        return {"error": "NO_CONTEXT", "message": template.get("no_context_error", "No diff or hint to work with.")}
 
     # 2. Defesa: Sanitização (Redactor)
     # Chama o cartucho via kernel (IPC simulado)
@@ -123,46 +224,15 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     project_instructions = ""  # Deprecated
 
-    # 4. Construção do Prompt
+    # 4. Construção do Prompt (usando templates dinâmicos)
     commit_lang = payload.get("commit_lang", "en")
-    lang_instruction = "English (en-US)" if "en" in commit_lang else "Português Brasileiro (pt-BR)"
+    is_truncated = payload.get("is_truncated", False) or len(safe_diff) > _MAX_DIFF_CONTEXT
     
-    system_prompt = f"""Você é um Assistente DevOps Sênior.
-Sua missão é escrever mensagens de commit Git claras, detalhadas e úteis.
-{style_guide}
-
-Regras:
-- Título curto (max 50 chars).
-- Sempre incluir corpo explicativo em bullet list.
-- Cobrir as mudanças relevantes por tema, evitando omitir melhorias e atualizações importantes.
-- Usar quantos bullets forem necessários para representar os temas principais.
-- Cada bullet deve começar EXATAMENTE com um marcador de categoria:
-  - x = melhoria (feature/enhancement)
-  - b = correção (bugfix)
-  - t = atualização técnica (update/refactor/chore)
-- Formato obrigatório do corpo:
-  - x <descrição objetiva>
-  - b <descrição objetiva>
-  - t <descrição objetiva>
-- Responda APENAS a mensagem do commit.
-- Idioma das mensagens: {lang_instruction}.
-"""
-    is_truncated = payload.get("is_truncated", False)
-    if is_truncated:
-        system_prompt += "\nATENÇÃO: O diff é extenso. Gere mensagem detalhada e abrangente por temas, sem usar resumo genérico."
-
+    # Carrega templates do idioma solicitado
+    system_prompt = _get_system_prompt(commit_lang, style_guide, is_truncated)
+    
     diff_context = _build_diff_context(safe_diff)
-
-    user_prompt = f"""Gere um commit para as seguintes alterações:
----
-{diff_context}
----
-"""
-    if len(safe_diff) > _MAX_DIFF_CONTEXT:
-        user_prompt += "\n(Diff extenso: enviado em recortes para maximizar cobertura temática.)"
-
-    if hint:
-        user_prompt += f"\nDica do desenvolvedor: '{hint}'"
+    user_prompt = _get_user_prompt(commit_lang, diff_context, hint, is_truncated)
 
     # 5. Resolução de Modelo e Provedor (com Fallback)
     # Se 'model' não veio no payload, tenta buscar no ambiente

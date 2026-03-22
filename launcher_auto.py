@@ -28,31 +28,24 @@ def _run_auto_with_guards(
     model = options.model
     if model == "auto":
         with console.status(f"[bold cyan]{t('detecting_ai')}", spinner="dots"):
-            detected_provider = "openai"
-
-            openrouter_key = run_async(
-                kernel.run("security/sec-keyring", {"action": "get", "service": "openrouter_api_key"})
-            ).get("value")
-            if openrouter_key:
-                detected_provider = "openrouter"
-            else:
-                groq_key = run_async(
-                    kernel.run("security/sec-keyring", {"action": "get", "service": "groq_api_key"})
-                ).get("value")
-                if groq_key:
-                    detected_provider = "groq"
-                else:
-                    openai_key = run_async(
-                        kernel.run("security/sec-keyring", {"action": "get", "service": "openai_api_key"})
-                    ).get("value")
-                    if openai_key:
-                        detected_provider = "openai"
-                    else:
-                        gemini_key = run_async(
-                            kernel.run("security/sec-keyring", {"action": "get", "service": "gemini_api_key"})
-                        ).get("value")
-                        if gemini_key:
-                            detected_provider = "gemini"
+            # Ordem de prioridade: OpenRouter > Groq > OpenAI > Gemini > Ollama
+            provider_priority = ["openrouter", "groq", "openai", "gemini", "ollama"]
+            detected_provider = None
+            
+            # Tenta cada provedor na ordem de prioridade
+            for provider in provider_priority:
+                key_res = run_async(
+                    kernel.run("security/sec-keyring", {"action": "get", "service": provider})
+                )
+                if key_res.get("value"):
+                    detected_provider = provider
+                    console.print(f"[dim]✓ {provider} disponível[/dim]")
+                    break
+            
+            # Se nenhum provedor configurado, usa openai como padrão (vai falhar depois, mas claro)
+            if not detected_provider:
+                detected_provider = "openai"
+                console.print(f"[yellow]⚠ Nenhum provedor configurado. Tentando openai...[/yellow]")
 
         model = detected_provider
         console.print(f"[bold cyan]{t('ai_provider_label', model=model.upper())}[/bold cyan]")

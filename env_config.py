@@ -49,10 +49,19 @@ def get_model_for_provider(provider: str) -> str:
     model_key = f"{provider.upper()}_MODEL"
     return get_env_var(model_key, "")
 
-def get_api_key(provider: str) -> str:
-    """Obtém a chave de API para um provedor específico."""
-    key_key = f"{provider.upper()}_API_KEY"
-    return get_env_var(key_key, "")
+# Mapeamento completo de nomes de serviço para variáveis de ambiente
+SERVICE_TO_ENV_MAP = {
+    "openrouter": "OPENROUTER_API_KEY",
+    "groq": "GROQ_API_KEY", 
+    "openai": "OPENAI_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+    "ollama": "OLLAMA_API_KEY"
+}
+
+def get_api_key_for_service(service_name: str) -> str:
+    """Obtém a chave de API para um serviço específico pelo nome do serviço."""
+    env_var = SERVICE_TO_ENV_MAP.get(service_name.lower(), f"{service_name.upper()}_API_KEY")
+    return get_env_var(env_var, "")
 
 def get_github_token() -> str:
     """Obtém o token do GitHub."""
@@ -72,13 +81,13 @@ AI_MODELS = {
     "ollama": get_model_for_provider("ollama"),
 }
 
-# Dicionário de chaves de API
+# Dicionário de chaves de API (usando nomes padronizados)
 API_KEYS = {
-    "groq": get_api_key("groq"),
-    "openai": get_api_key("openai"),
-    "gemini": get_api_key("gemini"),
-    "openrouter": get_api_key("openrouter"),
-    "ollama": get_api_key("ollama"),
+    "openrouter": get_api_key_for_service("openrouter"),
+    "groq": get_api_key_for_service("groq"),
+    "openai": get_api_key_for_service("openai"),
+    "gemini": get_api_key_for_service("gemini"),
+    "ollama": get_api_key_for_service("ollama"),
 }
 
 # GitHub Token

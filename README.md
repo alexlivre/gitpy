@@ -431,8 +431,16 @@ If you try to add `.env` to the whitelist (exceptions), GitPy:
 **NEW!** GitPy is now global. You can configure different languages for the software interface and for the messages that the AI writes in the commits.
 
 ### Config in .env:
-- `LANGUAGE`: Defines the language for CLI messages, help menus, and logs. (Options: `en`, `pt`).
-- `COMMIT_LANGUAGE`: Defines in which language the AI should write its commit messages. (e.g., `en`, `pt-br`, `es`).
+- `LANGUAGE`: Defines the language for CLI messages, help menus, and logs. (Options: `en`, `pt`)
+- `COMMIT_LANGUAGE`: Defines in which language the AI should write its commit messages. (Options: `en`, `pt`)
+
+### Independent Settings:
+Both settings work **independently**. You can have the interface in one language and commits in another:
+```env
+# Portuguese interface, English commits
+LANGUAGE=pt
+COMMIT_LANGUAGE=en
+```
 
 ### Bilingual Example:
 If you want the interface in Portuguese but work in an international repository where commits should be in English:
@@ -442,7 +450,14 @@ COMMIT_LANGUAGE=en
 ```
 
 ### Safe Fallback:
-If a translation is missing or the language file is not found, GitPy automatically uses **English** as fallback, ensuring the application never breaks due to a missing translation.
+- **Interface**: If a translation is missing, GitPy automatically uses **English** as fallback
+- **Commits**: If a prompt template is not found for the requested language, GitPy falls back to **English** templates
+
+### Adding New Languages:
+To add a new language (e.g., Spanish):
+1. Create `locales/es.json` for interface translations
+2. Create `cartridges/ai/ai-brain/prompts/es.json` for commit templates
+3. Set `LANGUAGE=es` and/or `COMMIT_LANGUAGE=es` in `.env`
 
 ## 🛠️ Modo Debug Profundo (Deep Trace)
 

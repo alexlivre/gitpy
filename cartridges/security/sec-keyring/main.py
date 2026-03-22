@@ -34,14 +34,25 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
 
         elif action == "get":
             # 1. Tenta Variável de Ambiente (Prioridade Máxima)
-            # Mapeamento para os nomes corretos das variáveis
-            env_mapping = {
-                "OPENAI_KEY": "openai",
-                "GEMINI_KEY": "gemini", 
-                "GITHUB_TOKEN": "github"
+            # Mapeamento de nomes de serviço para provedores
+            service_to_provider = {
+                "openrouter": "openrouter",
+                "groq": "groq",
+                "openai": "openai",
+                "gemini": "gemini",
+                "ollama": "ollama",
+                "github": "github",
+                # Compatibilidade com nomes antigos
+                "openai_key": "openai",
+                "gemini_key": "gemini",
+                "github_token": "github",
+                "openrouter_api_key": "openrouter",
+                "groq_api_key": "groq",
+                "openai_api_key": "openai",
+                "gemini_api_key": "gemini"
             }
             
-            provider = env_mapping.get(account, account.lower())
+            provider = service_to_provider.get(account.lower(), account.lower())
             env_val = env_config.API_KEYS.get(provider, "")
             
             if env_val:
