@@ -17,8 +17,18 @@ test_stealth_err.txt
 test_stealth_err_2.txt
 true_test_suite.log
 
+# Coverage e Testes
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+*.cover
+.hypothesis/
+
 # Específicos do GitPy
 temp_true_test/
+temp_local_test/
+temp_test_execution/
 .gitpy-private
 .gitpy-temp/
 
@@ -27,6 +37,14 @@ temp_true_test/
 .idea/
 *.swp
 *.swo
+*~
+.#*
+\#*#
+.*.swp
+.*.swo
+
+# Jupyter Notebooks
+.ipynb_checkpoints
 
 # Sistema Operacional
 .DS_Store
@@ -39,6 +57,13 @@ desktop.ini
 pylint_report*.txt
 fix_lints.py
 add_docstrings.py
+
+# Build e Distribuição
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
 
 # Backups temporários de testes
 .vibe_stealth_backup/
