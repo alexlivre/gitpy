@@ -22,6 +22,32 @@ from launcher_menu import (
 vibe_core.MENU_MODE = True
 
 
+def _parse_untracked_conflict_error(stderr: str) -> list:
+    """Extrai lista de arquivos untracked conflitantes do erro do Git.
+    
+    Returns:
+        list: Lista de arquivos untracked que conflitam.
+    """
+    if "untracked working tree files would be overwritten" not in stderr:
+        return []
+    
+    # Extrair lista de arquivos do erro
+    lines = stderr.splitlines()
+    conflicting_files = []
+    
+    for line in lines:
+        line = line.strip()
+        # Pular linhas de erro e instruções
+        if not line or line.startswith("error:") or line.startswith("Please") or line.startswith("Aborting"):
+            continue
+        if any(x in line for x in ["use", "move", "remove", "switch branches"]):
+            continue
+        # Linha com nome de arquivo (geralmente com tabulação)
+        conflicting_files.append(line)
+    
+    return conflicting_files
+
+
 def _check_repo_status(repo_path: str) -> dict:
     """Verifica o status do repositório e retorna informações sobre alterações locais."""
     try:
@@ -78,6 +104,81 @@ def _check_repo_status(repo_path: str) -> dict:
         return {"has_changes": False, "modified_files": [], "untracked_files": [], "staged_files": []}
     except Exception:
         return {"has_changes": False, "modified_files": [], "untracked_files": [], "staged_files": []}
+
+
+def _handle_untracked_conflicts(repo_path: str, conflicting_files: list, console: Console) -> bool:
+    """Lida com arquivos untracked que seriam sobrescritos pelo checkout.
+    
+    Returns:
+        bool: True se pode continuar com o switch, False se deve cancelar.
+    """
+    if not conflicting_files:
+        return True
+    
+    console.print(f"[yellow]⚠️  Você tem {len(conflicting_files)} arquivo(s) untracked que seriam sobrescritos:[/yellow]")
+    
+    for file_path in conflicting_files[:5]:  # Mostrar até 5 arquivos
+        console.print(f"[yellow]   • {file_path}[/yellow]")
+    if len(conflicting_files) > 5:
+        console.print(f"[yellow]   • ... e mais {len(conflicting_files) - 5} arquivos[/yellow]")
+    
+    console.print()
+    
+    # Oferecer opções ao usuário
+    action = _inquirer_select(
+        "Como deseja lidar com os arquivos untracked conflitantes?",
+        choices=[
+            {"name": "Remover arquivos conflitantes", "value": "remove"},
+            {"name": "Fazer backup e remover", "value": "backup"},
+            {"name": "Cancelar operação", "value": "cancel"},
+        ],
+        default="backup",
+        pointer="❯",
+        qmark="🔧",
+        cycle=True,
+    )
+    
+    if action == "cancel":
+        console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+        return False
+    
+    try:
+        if action == "remove":
+            # Remover arquivos conflitantes
+            import os
+            for file_path in conflicting_files:
+                full_path = os.path.join(repo_path, file_path)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+            
+            console.print(f"[green]✓ {len(conflicting_files)} arquivo(s) removido(s) com sucesso.[/green]")
+            return True
+        
+        elif action == "backup":
+            # Fazer backup e remover
+            import os
+            import shutil
+            from datetime import datetime
+            
+            backup_dir = os.path.join(repo_path, ".git", "untracked-backup-" + datetime.now().strftime("%Y%m%d_%H%M%S"))
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            for file_path in conflicting_files:
+                full_path = os.path.join(repo_path, file_path)
+                if os.path.exists(full_path):
+                    # Criar estrutura de diretórios no backup
+                    backup_path = os.path.join(backup_dir, file_path)
+                    os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+                    shutil.move(full_path, backup_path)
+            
+            console.print(f"[green]✓ Backup criado em: {backup_dir}[/green]")
+            return True
+    
+    except Exception as exc:
+        console.print(f"[red]Erro ao lidar com arquivos conflitantes: {exc}[/red]")
+        return False
+    
+    return False
 
 
 def _handle_local_changes(repo_path: str, status_info: dict, console: Console) -> bool:
@@ -483,18 +584,46 @@ def _run_branch_center(ctx: typer.Context) -> None:
             if not _handle_local_changes(repo_path, status_info, console):
                 _pause_menu()
                 continue
-
+            
+            # Tentar fazer switch e capturar erros
             switch_res = run_async(
                 kernel.run(
                     "core/git-branch",
                     {"action": "switch", "branch_name": selected_branch, "repo_path": repo_path},
                 )
             )
+            
             if switch_res.get("success"):
                 console.print(f"[bold green]{t('menu_branch_switch_ok', branch=selected_branch)}[/bold green]")
             else:
-                error_text = switch_res.get("message") or switch_res.get("error") or t("menu_branch_generic_error")
-                console.print(f"[bold red]{error_text}[/bold red]")
+                # Verificar se é erro de untracked conflicts
+                error_msg = switch_res.get("message", "")
+                if "untracked" in error_msg.lower() or "would be overwritten" in error_msg.lower():
+                    # Tentar extrair arquivos conflitantes do erro
+                    stderr = switch_res.get("error", "")
+                    conflicting_files = _parse_untracked_conflict_error(stderr) if stderr else []
+                    
+                    if conflicting_files:
+                        # Oferecer opções para lidar com conflitos
+                        if _handle_untracked_conflicts(repo_path, conflicting_files, console):
+                            # Tentar switch novamente após resolver conflitos
+                            retry_res = run_async(
+                                kernel.run(
+                                    "core/git-branch",
+                                    {"action": "switch", "branch_name": selected_branch, "repo_path": repo_path},
+                                )
+                            )
+                            if retry_res.get("success"):
+                                console.print(f"[bold green]{t('menu_branch_switch_ok', branch=selected_branch)}[/bold green]")
+                            else:
+                                console.print(f"[bold red]{retry_res.get('message') or retry_res.get('error') or t('menu_branch_generic_error')}[/bold red]")
+                        else:
+                            console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+                    else:
+                        console.print(f"[bold red]{error_msg}[/bold red]")
+                else:
+                    console.print(f"[bold red]{error_msg}[/bold red]")
+            
             _pause_menu()
             continue
 
