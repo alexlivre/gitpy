@@ -230,5 +230,19 @@
     "menu_tag_generic_error": "Falha na operação de tag.",
     "menu_tag_invalid_name": "Nome de tag inválido: {error}",
     "menu_tag_exists": "Tag '{tag}' já existe.",
-    "menu_tag_confirmation_invalid": "Código de confirmação inválido."
+    "menu_tag_confirmation_invalid": "Código de confirmação inválido.",
+    "menu_branch_already_on_branch": "Você já está na branch '{branch}'.",
+    "menu_branch_local_changes_warning": "Você tem {count} arquivo(s) modificado(s) que seriam sobrescritos:",
+    "menu_branch_local_changes_prompt": "Como deseja lidar com as alterações locais?",
+    "menu_branch_stash_changes": "Fazer Stash (guardar temporariamente)",
+    "menu_branch_commit_changes": "Fazer Commit Automático",
+    "menu_branch_discard_changes": "Descartar Alterações",
+    "menu_branch_stash_ok": "Alterações guardadas no stash com sucesso.",
+    "menu_branch_stash_fail": "Falha ao fazer stash das alterações",
+    "menu_branch_commit_ok": "Commit automático realizado com sucesso.",
+    "menu_branch_commit_fail": "Falha no commit automático",
+    "menu_branch_add_fail": "Falha ao adicionar arquivos",
+    "menu_branch_discard_ok": "Alterações descartadas com sucesso.",
+    "menu_branch_discard_fail": "Falha ao descartar alterações",
+    "menu_branch_handle_changes_fail": "Falha ao processar alterações locais"
 }

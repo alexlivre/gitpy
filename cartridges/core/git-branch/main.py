@@ -151,8 +151,27 @@ def process(payload: Dict[str, Any]) -> Dict[str, Any]:
                 return {"success": False, "error": "MISSING_BRANCH_NAME", "message": "Nome da branch não fornecido.", "cid": cid}
             if not process({"action": "exists", "branch_name": branch_name, "repo_path": repo_path}).get("exists"):
                 return {"success": False, "error": f"Branch '{branch_name}' não existe.", "cid": cid}
-            run_git_cmd(["checkout", branch_name], repo_path)
-            return {"success": True, "message": f"Alternado para branch '{branch_name}'.", "cid": cid}
+            try:
+                run_git_cmd(["checkout", branch_name], repo_path)
+                return {"success": True, "message": f"Alternado para branch '{branch_name}'.", "cid": cid}
+            except Exception as exc:
+                error_msg = str(exc)
+                if "would be overwritten by checkout" in error_msg:
+                    return {
+                        "success": False, 
+                        "error": "LOCAL_CHANGES_CONFLICT",
+                        "message": "Alterações locais impedem o checkout. Faça commit, stash ou descarte as alterações antes de trocar de branch.",
+                        "cid": cid
+                    }
+                elif "is not a branch" in error_msg:
+                    return {
+                        "success": False,
+                        "error": "INVALID_BRANCH",
+                        "message": f"'{branch_name}' não é uma branch válida.",
+                        "cid": cid
+                    }
+                else:
+                    return {"success": False, "error": "SWITCH_FAILED", "message": f"Falha ao trocar para branch '{branch_name}': {error_msg}", "cid": cid}
 
         if action == "delete":
             if not branch_name:

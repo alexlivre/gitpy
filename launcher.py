@@ -22,6 +22,9 @@ from rich import box
 from rich.console import Console
 from rich.panel import Panel
 
+import vibe_core
+vibe_core.MENU_MODE = True
+
 from vibe_core import kernel
 from i18n import t
 from navigation_stack import get_nav_stack

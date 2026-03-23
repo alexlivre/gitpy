@@ -9,10 +9,14 @@ from rich.console import Console
 from rich.panel import Panel
 
 from vibe_core import VibeVault, kernel
+import vibe_core
 from i18n import t
 from launcher_shared import run_async, _resolve_repo_path, AutoOptions
 from env_config import COMMIT_LANGUAGE
 from typing import Callable
+
+# Ativar modo menu para desativar logs INFO
+vibe_core.MENU_MODE = True
 
 
 def _run_auto_with_guards(

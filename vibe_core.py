@@ -12,6 +12,9 @@ import uuid
 from datetime import datetime
 from typing import Any, Callable, Dict
 
+# Variável global para controlar exibição de logs no modo menu
+MENU_MODE = False
+
 # --- NOVO RECURSO: O GUARDA-VOLUMES (Vibe Vault) ---
 
 
@@ -104,6 +107,11 @@ class VibeKernel:
             message (str): Conteúdo do log.
             level (str): Nível de severidade (INFO, ERROR, WARN).
         """
+        global MENU_MODE
+        # Se estiver em modo menu e nível for INFO, não exibe o log
+        if MENU_MODE and level == "INFO":
+            return
+        
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sys.stderr.write(
             f"[{timestamp}][{level}][{cid}][{cartridge}] {message}\n")

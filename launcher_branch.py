@@ -5,6 +5,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from vibe_core import kernel
+import vibe_core
 from i18n import t
 from launcher_shared import run_async, _resolve_repo_path
 from launcher_menu import (
@@ -16,6 +17,159 @@ from launcher_menu import (
     _inquirer_confirm,
     _get_menu_repo_status,
 )
+
+# Ativar modo menu para desativar logs INFO
+vibe_core.MENU_MODE = True
+
+
+def _check_repo_status(repo_path: str) -> dict:
+    """Verifica o status do repositório e retorna informações sobre alterações locais."""
+    try:
+        # Usar git status diretamente via git-executor
+        result = run_async(kernel.run("core/git-executor", {
+            "action": "run_command",
+            "command": "status --porcelain",
+            "repo_path": repo_path
+        }))
+        
+        if result.get("success"):
+            output = result.get("stdout", "")
+            modified_files = []
+            untracked_files = []
+            staged_files = []
+            
+            for line in output.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                # Parse status codes
+                status_code = line[:2]
+                file_path = line[3:].strip()
+                
+                if status_code.startswith("M") or status_code.endswith("M"):
+                    # Modified files (including staged and unstaged)
+                    if status_code[0] != " " and status_code[0] != "?":
+                        staged_files.append(file_path)
+                    if status_code[1] != " " and status_code[1] != "?":
+                        modified_files.append(file_path)
+                elif status_code == "??":
+                    # Untracked files
+                    untracked_files.append(file_path)
+            
+            return {
+                "has_changes": len(modified_files) > 0 or len(staged_files) > 0,
+                "modified_files": modified_files,
+                "untracked_files": untracked_files,
+                "staged_files": staged_files
+            }
+        
+        return {"has_changes": False, "modified_files": [], "untracked_files": [], "staged_files": []}
+    except Exception:
+        return {"has_changes": False, "modified_files": [], "untracked_files": [], "staged_files": []}
+
+
+def _handle_local_changes(repo_path: str, status_info: dict, console: Console) -> bool:
+    """Lida com alterações locais antes do switch de branch.
+    
+    Returns:
+        bool: True se pode continuar com o switch, False se deve cancelar.
+    """
+    if not status_info.get("has_changes", False):
+        return True
+    
+    modified_files = status_info.get("modified_files", [])
+    console.print(f"[yellow]⚠️  {t('menu_branch_local_changes_warning', count=len(modified_files))}[/yellow]")
+    
+    for file_path in modified_files[:5]:  # Mostrar até 5 arquivos
+        console.print(f"[yellow]   • {file_path}[/yellow]")
+    if len(modified_files) > 5:
+        console.print(f"[yellow]   • ... e mais {len(modified_files) - 5} arquivos[/yellow]")
+    
+    console.print()
+    
+    # Oferecer opções ao usuário
+    action = _inquirer_select(
+        t("menu_branch_local_changes_prompt"),
+        choices=[
+            {"name": t("menu_branch_stash_changes"), "value": "stash"},
+            {"name": t("menu_branch_commit_changes"), "value": "commit"},
+            {"name": t("menu_branch_discard_changes"), "value": "discard"},
+            {"name": t("menu_action_cancel"), "value": "cancel"},
+        ],
+        default="stash",
+        pointer="❯",
+        qmark="🔧",
+        cycle=True,
+    )
+    
+    if action == "cancel":
+        console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+        return False
+    
+    try:
+        if action == "stash":
+            # Fazer stash das alterações
+            stash_result = run_async(kernel.run("core/git-executor", {
+                "action": "run_command",
+                "command": "stash push -m \"Auto-stash before branch switch\"",
+                "repo_path": repo_path
+            }))
+            
+            if stash_result.get("success"):
+                console.print(f"[green]✓ {t('menu_branch_stash_ok')}[/green]")
+                return True
+            else:
+                console.print(f"[red]{t('menu_branch_stash_fail')}: {stash_result.get('stderr', '')}[/red]")
+                return False
+        
+        elif action == "commit":
+            # Commit automático das alterações
+            # Primeiro adicionar todos os arquivos modificados
+            add_result = run_async(kernel.run("core/git-executor", {
+                "action": "run_command",
+                "command": "add " + " ".join(modified_files),
+                "repo_path": repo_path
+            }))
+            
+            if add_result.get("success"):
+                # Fazer commit com mensagem automática
+                commit_result = run_async(kernel.run("core/git-executor", {
+                    "action": "run_command",
+                    "command": "commit -m \"Auto-commit before branch switch\"",
+                    "repo_path": repo_path
+                }))
+                
+                if commit_result.get("success"):
+                    console.print(f"[green]✓ {t('menu_branch_commit_ok')}[/green]")
+                    return True
+                else:
+                    console.print(f"[red]{t('menu_branch_commit_fail')}: {commit_result.get('stderr', '')}[/red]")
+                    return False
+            else:
+                console.print(f"[red]{t('menu_branch_add_fail')}: {add_result.get('stderr', '')}[/red]")
+                return False
+        
+        elif action == "discard":
+            # Descartar alterações
+            discard_result = run_async(kernel.run("core/git-executor", {
+                "action": "run_command",
+                "command": "checkout -- " + " ".join(modified_files),
+                "repo_path": repo_path
+            }))
+            
+            if discard_result.get("success"):
+                console.print(f"[green]✓ {t('menu_branch_discard_ok')}[/green]")
+                return True
+            else:
+                console.print(f"[red]{t('menu_branch_discard_fail')}: {discard_result.get('stderr', '')}[/red]")
+                return False
+    
+    except Exception as exc:
+        console.print(f"[red]{t('menu_branch_handle_changes_fail')}: {exc}[/red]")
+        return False
+    
+    return False
 
 
 def _run_branch_center(ctx: typer.Context) -> None:
@@ -280,6 +434,18 @@ def _run_branch_center(ctx: typer.Context) -> None:
             if selected_branch == "back":
                 continue
 
+            # Verificar se já está na branch selecionada
+            if selected_branch == current_branch:
+                console.print(f"[yellow]{t('menu_branch_already_on_branch', branch=selected_branch)}[/yellow]")
+                _pause_menu()
+                continue
+
+            # Verificar status do repositório antes do switch
+            status_info = _check_repo_status(repo_path)
+            if not _handle_local_changes(repo_path, status_info, console):
+                _pause_menu()
+                continue
+
             switch_res = run_async(
                 kernel.run(
                     "core/git-branch",
@@ -359,6 +525,12 @@ def _run_branch_center(ctx: typer.Context) -> None:
                 console.print(f"[bold red]{create_res.get('error', t('menu_branch_generic_error'))}[/bold red]")
                 _pause_menu()
                 continue
+
+        # Verificar status do repositório antes do switch
+        status_info = _check_repo_status(repo_path)
+        if not _handle_local_changes(repo_path, status_info, console):
+            _pause_menu()
+            continue
 
         switch_res = run_async(
             kernel.run(

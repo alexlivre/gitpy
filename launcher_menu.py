@@ -12,6 +12,10 @@ from rich.panel import Panel
 from i18n import t
 from navigation_stack import get_nav_stack
 from env_config import AI_PROVIDER
+import vibe_core
+
+# Ativar modo menu para desativar logs INFO
+vibe_core.MENU_MODE = True
 
 
 class MenuDependencyError(RuntimeError):
