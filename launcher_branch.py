@@ -39,21 +39,31 @@ def _check_repo_status(repo_path: str) -> dict:
             staged_files = []
             
             for line in output.splitlines():
-                line = line.strip()
                 if not line:
                     continue
                     
-                # Parse status codes
-                status_code = line[:2]
-                file_path = line[3:].strip()
+                # Parse status codes - lidar com ambos os formatos
+                if len(line) >= 3 and line[1] == ' ':
+                    # Formato: "M filename" (git-executor)
+                    status_code = line[0] + ' '
+                    file_path = line[2:]
+                else:
+                    # Formato padrão: "  M filename" ou "?? filename"
+                    status_code = line[:2]
+                    file_path = line[3:]
                 
-                if status_code.startswith("M") or status_code.endswith("M"):
-                    # Modified files (including staged and unstaged)
-                    if status_code[0] != " " and status_code[0] != "?":
-                        staged_files.append(file_path)
-                    if status_code[1] != " " and status_code[1] != "?":
-                        modified_files.append(file_path)
-                elif status_code == "??":
+                # Working tree status (second character)
+                working_tree_status = status_code[1] if len(status_code) > 1 else ' '
+                # Staging area status (first character)  
+                staging_status = status_code[0] if len(status_code) > 0 else ' '
+                
+                if working_tree_status == 'M':
+                    # Modified in working tree
+                    modified_files.append(file_path)
+                elif staging_status == 'M':
+                    # Modified in staging area
+                    staged_files.append(file_path)
+                elif status_code == '??':
                     # Untracked files
                     untracked_files.append(file_path)
             
