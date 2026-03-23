@@ -61,7 +61,8 @@ def _check_repo_status(repo_path: str) -> dict:
                 "has_changes": len(modified_files) > 0 or len(staged_files) > 0,
                 "modified_files": modified_files,
                 "untracked_files": untracked_files,
-                "staged_files": staged_files
+                "staged_files": staged_files,
+                "total_changes": len(modified_files) + len(staged_files)
             }
         
         return {"has_changes": False, "modified_files": [], "untracked_files": [], "staged_files": []}
@@ -152,6 +153,10 @@ def _handle_local_changes(repo_path: str, status_info: dict, console: Console) -
         
         elif action == "discard":
             # Descartar alterações
+            if not modified_files:
+                console.print(f"[yellow]⚠️ Nenhum arquivo modificado para descartar.[/yellow]")
+                return True
+            
             discard_result = run_async(kernel.run("core/git-executor", {
                 "action": "run_command",
                 "command": "checkout -- " + " ".join(modified_files),
