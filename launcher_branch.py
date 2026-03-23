@@ -162,19 +162,42 @@ def _handle_local_changes(repo_path: str, status_info: dict, console: Console) -
                 return False
         
         elif action == "discard":
-            # Descartar alterações
-            if not modified_files:
+            # Descartar alterações (working tree + staged)
+            staged_files = status_info.get("staged_files", [])
+            all_files = list(set(modified_files + staged_files))
+            
+            if not all_files:
                 console.print(f"[yellow]⚠️ Nenhum arquivo modificado para descartar.[/yellow]")
                 return True
             
+            # Primeiro: unstage arquivos (se houver)
+            if staged_files:
+                reset_result = run_async(kernel.run("core/git-executor", {
+                    "action": "run_command",
+                    "command": "reset HEAD -- " + " ".join(staged_files),
+                    "repo_path": repo_path
+                }))
+                
+                if not reset_result.get("success"):
+                    console.print(f"[red]{t('menu_branch_discard_fail')}: {reset_result.get('stderr', '')}[/red]")
+                    return False
+            
+            # Segundo: descartar alterações locais
             discard_result = run_async(kernel.run("core/git-executor", {
                 "action": "run_command",
-                "command": "checkout -- " + " ".join(modified_files),
+                "command": "checkout -- " + " ".join(all_files),
                 "repo_path": repo_path
             }))
             
             if discard_result.get("success"):
                 console.print(f"[green]✓ {t('menu_branch_discard_ok')}[/green]")
+                
+                # Verificar se ainda há alterações
+                new_status = _check_repo_status(repo_path)
+                if new_status.get("has_changes"):
+                    console.print(f"[red]⚠️ Ainda há alterações não resolvidas. Tente usar 'Stash' em vez de 'Descartar'.[/red]")
+                    return False
+                
                 return True
             else:
                 console.print(f"[red]{t('menu_branch_discard_fail')}: {discard_result.get('stderr', '')}[/red]")
