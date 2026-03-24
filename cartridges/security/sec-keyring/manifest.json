@@ -3,7 +3,8 @@
         "name": "sec-keyring",
         "version": "1.0.0",
         "description": "Gestão de tokens via OS Keyring. Jamais salva em texto plano.",
-        "ai_role": "Cofre digital. Interface segura com o Gerenciador de Credenciais do Sistema Operacional para guardar e recuperar tokens de API."
+        "ai_role": "Cofre digital. Interface segura com o Gerenciador de Credenciais do Sistema Operacional para guardar e recuperar tokens de API.",
+        "sidecar": "none"
     },
     "io_contract": {
         "input_schema": {

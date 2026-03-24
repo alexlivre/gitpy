@@ -3,7 +3,8 @@
         "name": "sec-sanitizer",
         "version": "1.0.0",
         "description": "Muralha de Chumbo: filtra arquivos sensíveis pela Blocklist Imutável.",
-        "ai_role": "Porteiro de segurança. Garante que nenhum arquivo da Blocklist (chaves, senhas, envs) seja lido pelo sistema, independentemente do que o usuário peça."
+        "ai_role": "Porteiro de segurança. Garante que nenhum arquivo da Blocklist (chaves, senhas, envs) seja lido pelo sistema, independentemente do que o usuário peça.",
+        "sidecar": "blocklist"
     },
     "io_contract": {
         "input_schema": {

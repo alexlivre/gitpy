@@ -6,3 +6,4 @@ ollama
 keyring
 groq
 python-dotenv
+InquirerPy

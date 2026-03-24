@@ -1,0 +1,25 @@
+{
+    "name": "git-branch",
+    "version": "1.0.0",
+    "description": "Git branch management cartridge for GitPy",
+    "author": "GitPy Team",
+    "type": "core",
+    "sidecar": "none",
+    "dependencies": [],
+    "permissions": [
+        "git_read",
+        "git_write"
+    ],
+    "entry_point": "main.py",
+    "supported_actions": [
+        "create",
+        "switch", 
+        "current",
+        "exists",
+        "validate",
+        "delete",
+        "delete_multiple",
+        "push_branch"
+    ],
+    "security_level": "medium"
+}

@@ -3,7 +3,8 @@
         "name": "cli-renderer",
         "version": "1.0.0",
         "description": "Interface visual Rich: spinners, painéis, tradução de erros Git.",
-        "ai_role": "Artista do terminal. Responsável por traduzir dados brutos e JSONs em interfaces visuais bonitas, tabelas e animações para o usuário humano."
+        "ai_role": "Artista do terminal. Responsável por traduzir dados brutos e JSONs em interfaces visuais bonitas, tabelas e animações para o usuário humano.",
+        "sidecar": "none"
     },
     "io_contract": {
         "input_schema": {

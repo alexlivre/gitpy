@@ -2,6 +2,9 @@ import os
 import json
 from typing import Dict, Any
 
+# Importa o módulo de configuração para garantir que o ambiente esteja carregado
+from env_config import INTERFACE_LANGUAGE
+
 class I18nManager:
     """
     Sistema de internacionalização simples para o GitPy.
@@ -11,9 +14,8 @@ class I18nManager:
         self.locales_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), locales_dir)
         self.default_lang = "en"
         
-        # Lê e sanitiza a variável de ambiente (remove comentários e espaços)
-        raw_lang = os.getenv("LANGUAGE", self.default_lang)
-        self.current_lang = raw_lang.split('#')[0].strip().lower()
+        # Usa o idioma já carregado do env_config
+        self.current_lang = INTERFACE_LANGUAGE
         
         self.translations: Dict[str, Dict[str, str]] = {}
         

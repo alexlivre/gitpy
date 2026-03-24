@@ -3,7 +3,8 @@
     "name": "git-scanner",
     "version": "1.0.0",
     "description": "Analisa o estado do repositório Git: status, diff, branch, remote.",
-    "ai_role": "Agente responsável por levantar o contexto inicial. Ele descobre se há mudanças, qual a branch atual e se estamos conectados a um remote. Essencial para decidir se há algo a commitar."
+    "ai_role": "Agente responsável por levantar o contexto inicial. Ele descobre se há mudanças, qual a branch atual e se estamos conectados a um remote. Essencial para decidir se há algo a commitar.",
+    "sidecar": "smart_pack"
   },
   "io_contract": {
     "input_schema": {

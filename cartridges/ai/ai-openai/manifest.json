@@ -3,7 +3,8 @@
         "name": "ai-openai",
         "version": "1.0.0",
         "description": "Adapter LLM: OpenAI GPT. Implementa a interface LLMProvider.",
-        "ai_role": "Adaptador de protocolo. Traduz a intenção do Brain para a API específica da OpenAI, lidando com autenticação e tratamento de erros de rede."
+        "ai_role": "Adaptador de protocolo. Traduz a intenção do Brain para a API específica da OpenAI, lidando com autenticação e tratamento de erros de rede.",
+        "sidecar": "none"
     },
     "io_contract": {
         "input_schema": {

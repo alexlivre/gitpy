@@ -3,7 +3,8 @@
         "name": "ai-ollama",
         "version": "1.0.0",
         "description": "Adapter LLM: Ollama (Local). Implementa a interface LLMProvider.",
-        "ai_role": "Adaptador de protocolo. Traduz a intenção do Brain para a API local do Ollama, permitindo operação offline e privada."
+        "ai_role": "Adaptador de protocolo. Traduz a intenção do Brain para a API local do Ollama, permitindo operação offline e privada.",
+        "sidecar": "none"
     },
     "io_contract": {
         "input_schema": {

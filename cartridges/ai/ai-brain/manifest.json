@@ -3,7 +3,8 @@
         "name": "ai-brain",
         "version": "1.0.0",
         "description": "Orquestrador de IA: constrói prompts, roteia para o provider, valida respostas.",
-        "ai_role": "Cérebro central. Recebe o diff sanitizado, decide qual Persona adotar (via Style Engine) e gera a mensagem de commit final."
+        "ai_role": "Cérebro central. Recebe o diff sanitizado, decide qual Persona adotar (via Style Engine) e gera a mensagem de commit final.",
+        "sidecar": "none"
     },
     "io_contract": {
         "input_schema": {

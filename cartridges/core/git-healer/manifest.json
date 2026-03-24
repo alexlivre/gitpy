@@ -3,7 +3,8 @@
         "name": "git-healer",
         "version": "1.0.0",
         "description": "Auto-correção: pull --rebase, detecção e tratamento de conflitos.",
-        "ai_role": "Médico do repositório. Entra em ação quando um 'push' falha, tentando estratégias automáticas como 'pull --rebase' ou abortando em caso de conflito manual."
+        "ai_role": "Médico do repositório. Entra em ação quando um 'push' falha, tentando estratégias automáticas como 'pull --rebase' ou abortando em caso de conflito manual.",
+        "sidecar": "none"
     },
     "io_contract": {
         "input_schema": {

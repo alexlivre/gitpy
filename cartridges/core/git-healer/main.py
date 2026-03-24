@@ -1,9 +1,16 @@
 """
 Central module for git-healer functionality.
 """
+import sys
 from typing import Any, Dict
 
 from vibe_core import kernel
+
+
+def _log(msg: str):
+    """Envia log para STDERR conforme VIBE_ENGINEERING_GUIDE."""
+    sys.stderr.write(f"{msg}\n")
+    sys.stderr.flush()
 
 
 async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -20,15 +27,13 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
     if not repo_path or not error_output:
         return {"success": False, "error": "MISSING_ARGS", "message": "repo_path e error_output são obrigatórios."}
 
-    print(
-        f"[bold yellow]🚑 Git Healer acionado! Tentando corrigir erro no comando '{failed_command}'...[/bold yellow]")
+    _log("[bold yellow]🚑 Git Healer acionado! Tentando corrigir erro no comando '{failed_command}'...[/bold yellow]")
 
     history = []
     current_error = error_output
 
     for attempt in range(1, max_retries + 1):
-        print(
-            f"[bold cyan]🔄 Tentativa de Cura {attempt}/{max_retries}...[/bold cyan]")
+        _log(f"[bold cyan]🔄 Tentativa de Cura {attempt}/{max_retries}...[/bold cyan]")
 
         # 1. Diagnóstico e Prescrição (IA)
         system_prompt = """Você é um Especialista em Git e Resolução de Conflitos.
@@ -77,14 +82,14 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
                         for cmd in prescription.split('\n') if cmd.strip()]
 
         except Exception as e:
-            print(f"[red]❌ Erro na consulta ao médico (IA): {e}[/red]")
+            _log(f"[red]❌ Erro na consulta ao médico (IA): {e}[/red]")
             return {"success": False, "message": f"IA falhou: {e}"}
 
         if not commands:
-            print("[yellow]⚠️ IA não sugeriu correções.[/yellow]")
+            _log("[yellow]⚠️ IA não sugeriu correções.[/yellow]")
             break
 
-        print(f"[dim]💊 Prescrição:[/dim] {commands}")
+        _log(f"[dim]💊 Prescrição:[/dim] {commands}")
 
         # 2. Execução da Cirurgia (Execução de Comandos)
         batch_success = True
@@ -104,11 +109,11 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
             if not exec_res.get("success"):
                 batch_success = False
                 current_error = exec_res.get("stderr")
-                print(
-                    f"[red]❌ Falha na cura ao executar '{cmd}': {current_error}[/red]")
+                sys.stderr.write(f"[red]❌ Falha na cura ao executar '{cmd}': {current_error}[/red]\n")
+                sys.stderr.flush()
                 break
             else:
-                print(f"[green]✅ '{cmd}' executado com sucesso.[/green]")
+                _log(f"[green]✅ '{cmd}' executado com sucesso.[/green]")
 
         history.append({"attempt": attempt, "commands": commands,
                        "success": batch_success, "error": current_error})
@@ -116,8 +121,7 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
         if batch_success:
             # Se a cura funcionou (todos os comandos de correção rodaram),
             # tentamos rodar o comando ORIGINAL que havia falhado.
-            print(
-                f"[bold green]✨ Cura aplicada! Re-tentando comando original: '{failed_command}'...[/bold green]")
+            _log(f"[bold green]✨ Cura aplicada! Re-tentando comando original: '{failed_command}'...[/bold green]")
 
             cmd_orig_clean = failed_command
             if failed_command.startswith("git "):
@@ -132,8 +136,7 @@ async def process(payload: Dict[str, Any]) -> Dict[str, Any]:
                 return {"success": True, "message": "Repositório curado e comando original executado com sucesso!", "attempts": attempt}
             else:
                 current_error = retry_orig.get("stderr")
-                print(
-                    f"[red]🤕 O comando original ainda falha. Tentando nova estratégia...[/red]")
+                _log(f"[red]🤕 O comando original ainda falha. Tentando nova estratégia...[/red]")
                 # Loop continua para próxima tentativa
 
     return {

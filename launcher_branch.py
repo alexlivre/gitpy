@@ -1,0 +1,712 @@
+"""Branch Center - Gerenciamento de branches do GitPy."""
+
+import typer
+from rich.console import Console
+from rich.panel import Panel
+
+from vibe_core import kernel
+import vibe_core
+from i18n import t
+from launcher_shared import run_async, _resolve_repo_path
+from launcher_menu import (
+    _render_menu_header,
+    _pause_menu,
+    _inquirer_select,
+    _inquirer_checkbox,
+    _inquirer_text,
+    _inquirer_confirm,
+    _get_menu_repo_status,
+)
+
+# Ativar modo menu para desativar logs INFO
+vibe_core.MENU_MODE = True
+
+
+def _parse_untracked_conflict_error(stderr: str) -> list:
+    """Extrai lista de arquivos untracked conflitantes do erro do Git.
+    
+    Returns:
+        list: Lista de arquivos untracked que conflitam.
+    """
+    if "untracked working tree files would be overwritten" not in stderr:
+        return []
+    
+    # Extrair lista de arquivos do erro
+    lines = stderr.splitlines()
+    conflicting_files = []
+    
+    for line in lines:
+        line = line.strip()
+        # Pular linhas de erro e instruções
+        if not line or line.startswith("error:") or line.startswith("Please") or line.startswith("Aborting"):
+            continue
+        if any(x in line for x in ["use", "move", "remove", "switch branches"]):
+            continue
+        # Linha com nome de arquivo (geralmente com tabulação)
+        conflicting_files.append(line)
+    
+    return conflicting_files
+
+
+def _check_repo_status(repo_path: str) -> dict:
+    """Verifica o status do repositório e retorna informações sobre alterações locais."""
+    try:
+        # Usar git status diretamente via git-executor
+        result = run_async(kernel.run("core/git-executor", {
+            "action": "run_command",
+            "command": "status --porcelain",
+            "repo_path": repo_path
+        }))
+        
+        if result.get("success"):
+            output = result.get("stdout", "")
+            modified_files = []
+            untracked_files = []
+            staged_files = []
+            
+            for line in output.splitlines():
+                if not line:
+                    continue
+                    
+                # Parse status codes - lidar com ambos os formatos
+                if len(line) >= 3 and line[1] == ' ':
+                    # Formato: "M filename" (git-executor)
+                    status_code = line[0] + ' '
+                    file_path = line[2:]
+                else:
+                    # Formato padrão: "  M filename" ou "?? filename"
+                    status_code = line[:2]
+                    file_path = line[3:]
+                
+                # Working tree status (second character)
+                working_tree_status = status_code[1] if len(status_code) > 1 else ' '
+                # Staging area status (first character)  
+                staging_status = status_code[0] if len(status_code) > 0 else ' '
+                
+                if working_tree_status == 'M':
+                    # Modified in working tree
+                    modified_files.append(file_path)
+                elif staging_status == 'M':
+                    # Modified in staging area
+                    staged_files.append(file_path)
+                elif status_code == '??':
+                    # Untracked files
+                    untracked_files.append(file_path)
+            
+            return {
+                "has_changes": len(modified_files) > 0 or len(staged_files) > 0,
+                "modified_files": modified_files,
+                "untracked_files": untracked_files,
+                "staged_files": staged_files,
+                "total_changes": len(modified_files) + len(staged_files)
+            }
+        
+        return {"has_changes": False, "modified_files": [], "untracked_files": [], "staged_files": []}
+    except Exception:
+        return {"has_changes": False, "modified_files": [], "untracked_files": [], "staged_files": []}
+
+
+def _handle_untracked_conflicts(repo_path: str, conflicting_files: list, console: Console) -> bool:
+    """Lida com arquivos untracked que seriam sobrescritos pelo checkout.
+    
+    Returns:
+        bool: True se pode continuar com o switch, False se deve cancelar.
+    """
+    if not conflicting_files:
+        return True
+    
+    console.print(f"[yellow]⚠️  Você tem {len(conflicting_files)} arquivo(s) untracked que seriam sobrescritos:[/yellow]")
+    
+    for file_path in conflicting_files[:5]:  # Mostrar até 5 arquivos
+        console.print(f"[yellow]   • {file_path}[/yellow]")
+    if len(conflicting_files) > 5:
+        console.print(f"[yellow]   • ... e mais {len(conflicting_files) - 5} arquivos[/yellow]")
+    
+    console.print()
+    
+    # Oferecer opções ao usuário
+    action = _inquirer_select(
+        "Como deseja lidar com os arquivos untracked conflitantes?",
+        choices=[
+            {"name": "Remover arquivos conflitantes", "value": "remove"},
+            {"name": "Fazer backup e remover", "value": "backup"},
+            {"name": "Cancelar operação", "value": "cancel"},
+        ],
+        default="backup",
+        pointer="❯",
+        qmark="🔧",
+        cycle=True,
+    )
+    
+    if action == "cancel":
+        console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+        return False
+    
+    try:
+        if action == "remove":
+            # Remover arquivos conflitantes
+            import os
+            for file_path in conflicting_files:
+                full_path = os.path.join(repo_path, file_path)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+            
+            console.print(f"[green]✓ {len(conflicting_files)} arquivo(s) removido(s) com sucesso.[/green]")
+            return True
+        
+        elif action == "backup":
+            # Fazer backup e remover
+            import os
+            import shutil
+            from datetime import datetime
+            
+            backup_dir = os.path.join(repo_path, ".git", "untracked-backup-" + datetime.now().strftime("%Y%m%d_%H%M%S"))
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            for file_path in conflicting_files:
+                full_path = os.path.join(repo_path, file_path)
+                if os.path.exists(full_path):
+                    # Criar estrutura de diretórios no backup
+                    backup_path = os.path.join(backup_dir, file_path)
+                    os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+                    shutil.move(full_path, backup_path)
+            
+            console.print(f"[green]✓ Backup criado em: {backup_dir}[/green]")
+            return True
+    
+    except Exception as exc:
+        console.print(f"[red]Erro ao lidar com arquivos conflitantes: {exc}[/red]")
+        return False
+    
+    return False
+
+
+def _handle_local_changes(repo_path: str, status_info: dict, console: Console) -> bool:
+    """Lida com alterações locais antes do switch de branch.
+    
+    Returns:
+        bool: True se pode continuar com o switch, False se deve cancelar.
+    """
+    if not status_info.get("has_changes", False):
+        return True
+    
+    modified_files = status_info.get("modified_files", [])
+    console.print(f"[yellow]⚠️  {t('menu_branch_local_changes_warning', count=len(modified_files))}[/yellow]")
+    
+    for file_path in modified_files[:5]:  # Mostrar até 5 arquivos
+        console.print(f"[yellow]   • {file_path}[/yellow]")
+    if len(modified_files) > 5:
+        console.print(f"[yellow]   • ... e mais {len(modified_files) - 5} arquivos[/yellow]")
+    
+    console.print()
+    
+    # Oferecer opções ao usuário
+    action = _inquirer_select(
+        t("menu_branch_local_changes_prompt"),
+        choices=[
+            {"name": t("menu_branch_stash_changes"), "value": "stash"},
+            {"name": t("menu_branch_commit_changes"), "value": "commit"},
+            {"name": t("menu_branch_discard_changes"), "value": "discard"},
+            {"name": t("menu_action_cancel"), "value": "cancel"},
+        ],
+        default="stash",
+        pointer="❯",
+        qmark="🔧",
+        cycle=True,
+    )
+    
+    if action == "cancel":
+        console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+        return False
+    
+    try:
+        if action == "stash":
+            # Fazer stash das alterações
+            stash_result = run_async(kernel.run("core/git-executor", {
+                "action": "run_command",
+                "command": "stash push -m \"Auto-stash before branch switch\"",
+                "repo_path": repo_path
+            }))
+            
+            if stash_result.get("success"):
+                console.print(f"[green]✓ {t('menu_branch_stash_ok')}[/green]")
+                return True
+            else:
+                console.print(f"[red]{t('menu_branch_stash_fail')}: {stash_result.get('stderr', '')}[/red]")
+                return False
+        
+        elif action == "commit":
+            # Commit automático das alterações
+            # Primeiro adicionar todos os arquivos modificados
+            add_result = run_async(kernel.run("core/git-executor", {
+                "action": "run_command",
+                "command": "add " + " ".join(modified_files),
+                "repo_path": repo_path
+            }))
+            
+            if add_result.get("success"):
+                # Fazer commit com mensagem automática
+                commit_result = run_async(kernel.run("core/git-executor", {
+                    "action": "run_command",
+                    "command": "commit -m \"Auto-commit before branch switch\"",
+                    "repo_path": repo_path
+                }))
+                
+                if commit_result.get("success"):
+                    console.print(f"[green]✓ {t('menu_branch_commit_ok')}[/green]")
+                    return True
+                else:
+                    console.print(f"[red]{t('menu_branch_commit_fail')}: {commit_result.get('stderr', '')}[/red]")
+                    return False
+            else:
+                console.print(f"[red]{t('menu_branch_add_fail')}: {add_result.get('stderr', '')}[/red]")
+                return False
+        
+        elif action == "discard":
+            # Descartar alterações (working tree + staged)
+            staged_files = status_info.get("staged_files", [])
+            all_files = list(set(modified_files + staged_files))
+            
+            if not all_files:
+                console.print(f"[yellow]⚠️ Nenhum arquivo modificado para descartar.[/yellow]")
+                return True
+            
+            # Primeiro: unstage arquivos (se houver)
+            if staged_files:
+                reset_result = run_async(kernel.run("core/git-executor", {
+                    "action": "run_command",
+                    "command": "reset HEAD -- " + " ".join(staged_files),
+                    "repo_path": repo_path
+                }))
+                
+                if not reset_result.get("success"):
+                    console.print(f"[red]{t('menu_branch_discard_fail')}: {reset_result.get('stderr', '')}[/red]")
+                    return False
+            
+            # Segundo: descartar alterações locais
+            discard_result = run_async(kernel.run("core/git-executor", {
+                "action": "run_command",
+                "command": "checkout -- " + " ".join(all_files),
+                "repo_path": repo_path
+            }))
+            
+            if discard_result.get("success"):
+                console.print(f"[green]✓ {t('menu_branch_discard_ok')}[/green]")
+                
+                # Verificar se ainda há alterações
+                new_status = _check_repo_status(repo_path)
+                if new_status.get("has_changes"):
+                    console.print(f"[red]⚠️ Ainda há alterações não resolvidas. Tente usar 'Stash' em vez de 'Descartar'.[/red]")
+                    return False
+                
+                return True
+            else:
+                console.print(f"[red]{t('menu_branch_discard_fail')}: {discard_result.get('stderr', '')}[/red]")
+                return False
+    
+    except Exception as exc:
+        console.print(f"[red]{t('menu_branch_handle_changes_fail')}: {exc}[/red]")
+        return False
+    
+    return False
+
+
+def _run_branch_center(ctx: typer.Context) -> None:
+    console = Console()
+    repo_path = _resolve_repo_path(ctx)
+
+    def _load_branch_list():
+        return run_async(kernel.run("core/git-branch", {"action": "list", "repo_path": repo_path}))
+
+    def _build_branch_choices(branch_names, current_branch, include_current=True):
+        choices = []
+        for name in branch_names:
+            if not include_current and name == current_branch:
+                continue
+            label = f"{name} [dim]({t('menu_branch_current_marker')})[/dim]" if name == current_branch else name
+            choices.append({"name": label, "value": name})
+        return choices
+
+    def _run_bulk_action(action: str):
+        listed = _load_branch_list()
+        if not listed.get("success"):
+            console.print(f"[red]{listed.get('error', t('menu_branch_generic_error'))}[/red]")
+            _pause_menu()
+            return
+
+        current_branch = listed.get("current_branch", "")
+        local_branches = listed.get("local_branches", [])
+
+        if action == "bulk_delete":
+            branch_choices = _build_branch_choices(local_branches, current_branch, include_current=False)
+            prompt = t("menu_branch_bulk_delete_prompt")
+            kernel_action = "delete_multiple"
+            payload_extra = {"force": False}
+        else:
+            branch_choices = _build_branch_choices(local_branches, current_branch, include_current=True)
+            prompt = t("menu_branch_bulk_push_prompt")
+            confirm_msg = t("menu_branch_bulk_push_confirm")
+            kernel_action = "push_branch"
+            payload_extra = {"remote": "origin"}
+
+        if not branch_choices:
+            console.print(f"[yellow]{t('menu_branch_bulk_empty')}[/yellow]")
+            _pause_menu()
+            return
+
+        selected = _inquirer_checkbox(
+            prompt,
+            choices=branch_choices,
+            default=[],
+            pointer="❯",
+            qmark="🌿",
+            cycle=True,
+        )
+        if not selected:
+            console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+            _pause_menu()
+            return
+
+        if action == "bulk_delete":
+            # New confirmation flow for bulk delete
+            payload = {
+                "action": kernel_action,
+                "branches_to_delete": selected,
+                "repo_path": repo_path,
+                **payload_extra,
+            }
+            result = run_async(kernel.run("core/git-branch", payload))
+            
+            if not result.get("success") and result.get("error") == "CONFIRMATION_REQUIRED":
+                # Show confirmation code and ask for input
+                confirmation_code = result.get("confirmation_code", "")
+                branches_count = result.get("branches_count", len(selected))
+                
+                console.print(f"[bold yellow]{t('menu_branch_bulk_delete_confirmation_required', count=branches_count, code=confirmation_code)}[/bold yellow]")
+                
+                # Loop for code input with validation
+                while True:
+                    user_code = _inquirer_text(
+                        t("menu_branch_bulk_delete_confirmation_prompt"),
+                        qmark="🔒",
+                    ).strip()
+                    
+                    if not user_code:
+                        console.print(f"[yellow]{t('menu_branch_bulk_delete_cancelled')}[/yellow]")
+                        _pause_menu()
+                        return
+                    
+                    # Second call with confirmation code
+                    payload["confirmation_code"] = user_code
+                    payload["expected_code"] = confirmation_code
+                    result = run_async(kernel.run("core/git-branch", payload))
+                    
+                    if not result.get("success") and result.get("error") == "INVALID_CONFIRMATION":
+                        console.print(f"[red]{t('menu_branch_bulk_delete_confirmation_invalid')}[/red]")
+                        continue
+                    else:
+                        break
+            
+            if not result.get("success"):
+                error_text = result.get("message") or result.get("error") or t("menu_branch_generic_error")
+                console.print(f"[red]{error_text}[/red]")
+                _pause_menu()
+                return
+            
+            # Show results for delete_multiple
+            if action == "bulk_delete":
+                results = result.get("results", [])
+                success_count = result.get("success_count", 0)
+                fail_count = result.get("fail_count", 0)
+                
+                for item in results:
+                    if item.get("success"):
+                        console.print(f"[green]{t('menu_branch_bulk_item_ok', branch=item['branch'])}[/green]")
+                    else:
+                        error_text = item.get("error", t("menu_branch_generic_error"))
+                        console.print(f"[red]{t('menu_branch_bulk_item_fail', branch=item['branch'], error=error_text)}[/red]")
+                
+                console.print(
+                    Panel(
+                        f"[bold green]{t('menu_branch_bulk_summary_ok', count=success_count)}[/bold green]\n"
+                        f"[bold red]{t('menu_branch_bulk_summary_fail', count=fail_count)}[/bold red]",
+                        title=t("menu_branch_bulk_summary_title"),
+                        border_style="cyan",
+                    )
+                )
+                _pause_menu()
+                return
+        
+        # Original flow for bulk_push
+        if not _inquirer_confirm(confirm_msg, default=False, qmark="🌿"):
+            console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+            _pause_menu()
+            return
+
+        ok_count = 0
+        fail_count = 0
+        for selected_branch in selected:
+            payload = {
+                "action": kernel_action,
+                "branch_name": selected_branch,
+                "repo_path": repo_path,
+                **payload_extra,
+            }
+            result = run_async(kernel.run("core/git-branch", payload))
+            if result.get("success"):
+                ok_count += 1
+                console.print(f"[green]{t('menu_branch_bulk_item_ok', branch=selected_branch)}[/green]")
+            else:
+                fail_count += 1
+                error_text = result.get("message") or result.get("error") or t("menu_branch_generic_error")
+                console.print(f"[red]{t('menu_branch_bulk_item_fail', branch=selected_branch, error=error_text)}[/red]")
+
+        console.print(
+            Panel(
+                f"[bold green]{t('menu_branch_bulk_summary_ok', count=ok_count)}[/bold green]\n"
+                f"[bold red]{t('menu_branch_bulk_summary_fail', count=fail_count)}[/bold red]",
+                title=t("menu_branch_bulk_summary_title"),
+                border_style="cyan",
+            )
+        )
+        _pause_menu()
+
+    while True:
+        _render_menu_header("menu_subtitle_branch", repo_status=_get_menu_repo_status(ctx))
+        action = _inquirer_select(
+            t("menu_branch_prompt"),
+            choices=[
+                {"name": t("menu_branch_action_current"), "value": "current"},
+                {"name": t("menu_branch_action_list"), "value": "list"},
+                {"name": t("menu_branch_action_create_switch"), "value": "create_switch"},
+                {"name": t("menu_branch_action_switch"), "value": "switch"},
+                {"name": t("menu_branch_action_bulk_delete"), "value": "bulk_delete"},
+                {"name": t("menu_branch_action_bulk_push"), "value": "bulk_push"},
+                {"name": t("menu_branch_action_validate"), "value": "validate"},
+                {"name": t("menu_action_back"), "value": "back"},
+            ],
+            default="current",
+            pointer="❯",
+            qmark="🌿",
+            amark="✓",
+            cycle=True,
+        )
+
+        if action == "back":
+            return
+
+        if action == "current":
+            current_res = run_async(
+                kernel.run("core/git-branch", {"action": "current", "repo_path": repo_path})
+            )
+            if current_res.get("success"):
+                console.print(
+                    Panel(
+                        f"[bold green]{current_res.get('current_branch', 'unknown')}[/bold green]",
+                        title=t("menu_branch_current_title"),
+                        border_style="green",
+                    )
+                )
+            else:
+                console.print(f"[red]{current_res.get('error', t('menu_branch_generic_error'))}[/red]")
+            _pause_menu()
+            continue
+
+        if action == "list":
+            listed = _load_branch_list()
+            if listed.get("success"):
+                local_branches = listed.get("local_branches", [])
+                remote_branches = listed.get("remote_branches", [])
+                current_branch = listed.get("current_branch", "")
+
+                local_lines = [
+                    (f"* {name}" if name == current_branch else f"  {name}")
+                    for name in local_branches
+                ]
+                remote_lines = [f"  {name}" for name in remote_branches]
+                content = (
+                    f"[bold]{t('menu_branch_list_local_title')}[/bold]\n"
+                    f"{chr(10).join(local_lines) if local_lines else t('menu_branch_list_empty')}\n\n"
+                    f"[bold]{t('menu_branch_list_remote_title')}[/bold]\n"
+                    f"{chr(10).join(remote_lines) if remote_lines else t('menu_branch_list_empty')}"
+                )
+                console.print(
+                    Panel(
+                        f"[white]{content}[/white]",
+                        title=t("menu_branch_list_title"),
+                        border_style="cyan",
+                    )
+                )
+            else:
+                console.print(f"[red]{listed.get('error', t('menu_branch_generic_error'))}[/red]")
+            _pause_menu()
+            continue
+
+        if action in {"bulk_delete", "bulk_push"}:
+            _run_bulk_action(action)
+            continue
+
+        if action == "switch":
+            listed = _load_branch_list()
+            if not listed.get("success"):
+                console.print(f"[red]{listed.get('error', t('menu_branch_generic_error'))}[/red]")
+                _pause_menu()
+                continue
+
+            current_branch = listed.get("current_branch", "")
+            all_branches = listed.get("all_branch_names", [])
+            branch_choices = _build_branch_choices(all_branches, current_branch, include_current=True)
+            if not branch_choices:
+                console.print(f"[yellow]{t('menu_branch_list_empty')}[/yellow]")
+                _pause_menu()
+                continue
+
+            selected_branch = _inquirer_select(
+                t("menu_branch_select_existing_prompt"),
+                choices=branch_choices + [{"name": t("menu_action_back"), "value": "back"}],
+                default=current_branch if current_branch else None,
+                pointer="❯",
+                qmark="🌿",
+                amark="✓",
+                cycle=True,
+            )
+            if selected_branch == "back":
+                continue
+
+            # Verificar se já está na branch selecionada
+            if selected_branch == current_branch:
+                console.print(f"[yellow]{t('menu_branch_already_on_branch', branch=selected_branch)}[/yellow]")
+                _pause_menu()
+                continue
+
+            # Verificar status do repositório antes do switch
+            status_info = _check_repo_status(repo_path)
+            if not _handle_local_changes(repo_path, status_info, console):
+                _pause_menu()
+                continue
+            
+            # Tentar fazer switch e capturar erros
+            switch_res = run_async(
+                kernel.run(
+                    "core/git-branch",
+                    {"action": "switch", "branch_name": selected_branch, "repo_path": repo_path},
+                )
+            )
+            
+            if switch_res.get("success"):
+                console.print(f"[bold green]{t('menu_branch_switch_ok', branch=selected_branch)}[/bold green]")
+            else:
+                # Verificar se é erro de untracked conflicts
+                error_msg = switch_res.get("message", "")
+                if "untracked" in error_msg.lower() or "would be overwritten" in error_msg.lower():
+                    # Tentar extrair arquivos conflitantes do erro
+                    stderr = switch_res.get("error", "")
+                    conflicting_files = _parse_untracked_conflict_error(stderr) if stderr else []
+                    
+                    if conflicting_files:
+                        # Oferecer opções para lidar com conflitos
+                        if _handle_untracked_conflicts(repo_path, conflicting_files, console):
+                            # Tentar switch novamente após resolver conflitos
+                            retry_res = run_async(
+                                kernel.run(
+                                    "core/git-branch",
+                                    {"action": "switch", "branch_name": selected_branch, "repo_path": repo_path},
+                                )
+                            )
+                            if retry_res.get("success"):
+                                console.print(f"[bold green]{t('menu_branch_switch_ok', branch=selected_branch)}[/bold green]")
+                            else:
+                                console.print(f"[bold red]{retry_res.get('message') or retry_res.get('error') or t('menu_branch_generic_error')}[/bold red]")
+                        else:
+                            console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+                    else:
+                        console.print(f"[bold red]{error_msg}[/bold red]")
+                else:
+                    console.print(f"[bold red]{error_msg}[/bold red]")
+            
+            _pause_menu()
+            continue
+
+        branch_name = _inquirer_text(
+            t("menu_branch_name_prompt"),
+            default="",
+            qmark="🌿",
+        ).strip()
+
+        if branch_name.lower() == "back":
+            continue
+
+        validation = run_async(
+            kernel.run(
+                "core/git-branch",
+                {"action": "validate", "branch_name": branch_name, "repo_path": repo_path},
+            )
+        )
+        if not validation.get("valid"):
+            console.print(
+                Panel(
+                    f"[bold red]{validation.get('error', t('menu_branch_generic_error'))}[/bold red]",
+                    title=t("menu_branch_validate_fail_title"),
+                    border_style="red",
+                )
+            )
+            _pause_menu()
+            continue
+
+        if action == "validate":
+            console.print(
+                Panel(
+                    f"[bold green]{t('menu_branch_validate_ok')}[/bold green]",
+                    title=t("menu_branch_validate_ok_title"),
+                    border_style="green",
+                )
+            )
+            _pause_menu()
+            continue
+
+        exists = run_async(
+            kernel.run(
+                "core/git-branch",
+                {"action": "exists", "branch_name": branch_name, "repo_path": repo_path},
+            )
+        ).get("exists", False)
+
+        # action == create_switch
+        if exists:
+            if not _inquirer_confirm(
+                t("menu_branch_exists_switch_confirm", branch=branch_name),
+                default=True,
+                qmark="🌿",
+            ):
+                console.print(f"[yellow]{t('op_cancelled')}[/yellow]")
+                _pause_menu()
+                continue
+        else:
+            create_res = run_async(
+                kernel.run(
+                    "core/git-branch",
+                    {"action": "create", "branch_name": branch_name, "repo_path": repo_path},
+                )
+            )
+            if not create_res.get("success"):
+                console.print(f"[bold red]{create_res.get('error', t('menu_branch_generic_error'))}[/bold red]")
+                _pause_menu()
+                continue
+
+        # Verificar status do repositório antes do switch
+        status_info = _check_repo_status(repo_path)
+        if not _handle_local_changes(repo_path, status_info, console):
+            _pause_menu()
+            continue
+
+        switch_res = run_async(
+            kernel.run(
+                "core/git-branch",
+                {"action": "switch", "branch_name": branch_name, "repo_path": repo_path},
+            )
+        )
+        if switch_res.get("success"):
+            console.print(f"[bold green]{t('menu_branch_switch_ok', branch=branch_name)}[/bold green]")
+        else:
+            console.print(f"[bold red]{switch_res.get('error', t('menu_branch_generic_error'))}[/bold red]")
+        _pause_menu()

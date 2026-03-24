@@ -1,0 +1,738 @@
+"""
+Menu interativo do GitPy (InquirerPy).
+"""
+import os
+from typing import Optional
+
+import typer
+from rich import box
+from rich.console import Console
+from rich.panel import Panel
+
+from i18n import t
+from navigation_stack import get_nav_stack
+from env_config import AI_PROVIDER
+import vibe_core
+
+# Ativar modo menu para desativar logs INFO
+vibe_core.MENU_MODE = True
+
+
+class MenuDependencyError(RuntimeError):
+    """Raised when the interactive menu dependency is unavailable."""
+
+
+def _load_inquirer():
+    try:
+        from InquirerPy import inquirer
+
+        return inquirer
+    except Exception as exc:
+        raise MenuDependencyError(t("menu_dependency_missing")) from exc
+
+
+def _inquirer_style():
+    from InquirerPy import get_style
+
+    return get_style(
+        {
+            "questionmark": "#ff2c6d bold",
+            "question": "#d9e7ff bold",
+            "answer": "#7dd3fc bold",
+            "pointer": "#22d3ee bold",
+            "highlighted": "#22d3ee bold",
+            "selected": "#4ade80 bold",
+            "separator": "#64748b",
+            "instruction": "#94a3b8",
+        },
+        style_override=False,
+    )
+
+
+def _inquirer_select(message: str, choices, default=None, **kwargs):
+    inquirer = _load_inquirer()
+    kwargs.setdefault("instruction", t("menu_instruction"))
+    kwargs.setdefault("style", _inquirer_style())
+    return inquirer.select(message=message, choices=choices, default=default, **kwargs).execute()
+
+
+def _inquirer_text(message: str, default: str = "", **kwargs) -> str:
+    inquirer = _load_inquirer()
+    kwargs.setdefault("qmark", "✎")
+    kwargs.setdefault("instruction", t("menu_instruction_text"))
+    kwargs.setdefault("style", _inquirer_style())
+    return inquirer.text(message=message, default=default, **kwargs).execute()
+
+
+def _inquirer_checkbox(message: str, choices, default=None, **kwargs):
+    inquirer = _load_inquirer()
+    kwargs.setdefault("instruction", t("menu_instruction_checkbox"))
+    kwargs.setdefault("style", _inquirer_style())
+    return inquirer.checkbox(message=message, choices=choices, default=default, **kwargs).execute()
+
+
+def _inquirer_confirm(message: str, default: bool = False, **kwargs) -> bool:
+    kwargs.setdefault("pointer", "❯")
+    kwargs.setdefault("qmark", "⚙")
+    kwargs.setdefault("amark", "✓")
+    kwargs.setdefault("instruction", t("menu_instruction"))
+    kwargs.setdefault("style", _inquirer_style())
+    kwargs.setdefault("cycle", True)
+
+    return _inquirer_select(
+        message=message,
+        choices=[
+            {"name": t("menu_yes_option"), "value": True},
+            {"name": t("menu_no_option"), "value": False},
+        ],
+        default=default,
+        **kwargs,
+    )
+
+
+def _menu_confirm(message: str) -> bool:
+    return _inquirer_confirm(message, default=False)
+
+
+def _render_menu_header(subtitle_key: str = "menu_subtitle_main", repo_status: Optional[str] = None) -> None:
+    from rich.text import Text
+
+    console = Console()
+    console.clear()
+
+    logo = Text(
+        "\n  ██████╗ ██╗████████╗██████╗ ██╗   ██╗\n"
+        " ██╔════╝ ██║╚══██╔══╝██╔══██╗╚██╗ ██╔╝\n"
+        " ██║  ███╗██║   ██║   ██████╔╝ ╚████╔╝\n"
+        " ██║   ██║██║   ██║   ██╔═══╝   ╚██╔╝\n"
+        " ╚██████╔╝██║   ██║   ██║        ██║\n"
+        "  ╚═════╝ ╚═╝   ╚═╝   ╚═╝        ╚═╝\n",
+        style="bold #c084fc",
+    )
+    subtitle = Text(f"  {t(subtitle_key)}", style="bold #22d3ee")
+
+    # Breadcrumb da pilha de navegação
+    nav_stack = get_nav_stack()
+    breadcrumb_text = ""
+    if not nav_stack.is_empty():
+        breadcrumb = nav_stack.get_breadcrumb(t("breadcrumb_separator"))
+        breadcrumb_text = f"\n  [dim cyan]📍 {breadcrumb}[/dim cyan]"
+
+    repo_line = Text(
+        f"\n  {repo_status}",
+        style="bold #facc15",
+    ) if repo_status else Text("")
+    version = Text("GitPy v1.0", style="bold #a78bfa")
+
+    body = Text.assemble(logo, subtitle, Text(breadcrumb_text), repo_line)
+    panel = Panel(
+        body,
+        title=version,
+        subtitle=Text("Powered by Vibe Engineering", style="#a78bfa"),
+        border_style="#a78bfa",
+        box=box.DOUBLE,
+        padding=(0, 1),
+    )
+    console.print(panel)
+
+
+def _pause_menu() -> None:
+    console = Console()
+    console.print(f"\n[dim]{t('menu_press_enter')}[/dim]")
+    try:
+        console.input()
+    except (EOFError, KeyboardInterrupt):
+        return
+
+
+def _collect_auto_options_from_menu(ctx: typer.Context):
+    from launcher import AutoOptions
+    from vibe_core import kernel
+    from launcher_shared import run_async
+
+    default_path = (ctx.obj or {}).get("path", ".")
+    
+    # Verifica se o caminho atual já é um repositório Git
+    # Se sim, pula a seleção de caminho e usa o diretório atual
+    import subprocess
+    try:
+        git_check = subprocess.run(
+            ["git", "rev-parse", "--git-dir"],
+            cwd=default_path,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        is_git_repo = git_check.returncode == 0
+    except Exception:
+        is_git_repo = False
+    
+    if not is_git_repo:
+        # Apenas mostra a seleção de caminho se não estiver em um repo Git
+        path_mode = _inquirer_select(
+            t("menu_prompt_path_mode"),
+            choices=[
+                {"name": t("menu_path_mode_current", path=default_path), "value": "current"},
+                {"name": t("menu_path_mode_custom"), "value": "custom"},
+                {"name": t("menu_auto_back"), "value": "back"},
+            ],
+            default="current",
+            pointer="❯",
+            qmark="⚙",
+            amark="✓",
+            cycle=True,
+        )
+
+        if path_mode == "back":
+            return None
+
+        if path_mode == "custom":
+            chosen_path = _inquirer_text(
+                t("menu_prompt_path_custom"),
+                default=default_path,
+            ).strip()
+            if chosen_path.lower() == "back":
+                return None
+        else:
+            chosen_path = default_path
+    else:
+        # Já está em um repo Git, usa o caminho atual diretamente
+        chosen_path = default_path
+
+    default_model = AI_PROVIDER
+    model_choices = ["auto", "openrouter", "groq", "openai", "gemini", "ollama"]
+    if default_model not in model_choices:
+        default_model = "auto"
+
+    model = _inquirer_select(
+        t("menu_prompt_model"),
+        choices=[
+            {"name": "auto", "value": "auto"},
+            {"name": "openrouter", "value": "openrouter"},
+            {"name": "groq", "value": "groq"},
+            {"name": "openai", "value": "openai"},
+            {"name": "gemini", "value": "gemini"},
+            {"name": "ollama", "value": "ollama"},
+            {"name": t("menu_auto_back"), "value": "back"},
+        ],
+        default=default_model,
+        pointer="❯",
+        qmark="⚙",
+        amark="✓",
+        cycle=True,
+    )
+
+    if model == "back":
+        return None
+    message = _inquirer_text(t("menu_prompt_message"), default="").strip()
+    if message.lower() == "back":
+        return None
+    branch = None
+    
+    # Obter branch atual para exibir no menu
+    repo_path = chosen_path or default_path
+    current_branch = "main"  # valor padrão
+    try:
+        listed = run_async(kernel.run("core/git-branch", {"action": "list", "repo_path": repo_path}))
+        if listed.get("success"):
+            current_branch = listed.get("current_branch", "main")
+    except Exception:
+        pass
+    
+    branch_mode = _inquirer_select(
+        t("menu_prompt_branch_mode"),
+        choices=[
+            {"name": t("menu_prompt_branch_none").format(branch=current_branch), "value": "none"},
+            {"name": t("menu_prompt_branch_existing"), "value": "existing"},
+            {"name": t("menu_prompt_branch_create"), "value": "create"},
+            {"name": t("menu_auto_back"), "value": "back"},
+        ],
+        default="none",
+        pointer="❯",
+        qmark="⚙",
+        amark="✓",
+        cycle=True,
+    )
+
+    if branch_mode == "back":
+        return None
+
+    if branch_mode == "create":
+        branch = _inquirer_text(t("menu_prompt_branch"), default="").strip()
+        if branch.lower() == "back":
+            return None
+    elif branch_mode == "existing":
+        repo_path = chosen_path or default_path
+        listed = run_async(kernel.run("core/git-branch", {"action": "list", "repo_path": repo_path}))
+        if not listed.get("success"):
+            branch = None
+        else:
+            current_branch = listed.get("current_branch", "")
+            branches = listed.get("all_branch_names", [])
+            if not branches:
+                branch = None
+            else:
+                branch_choices = []
+                for name in branches:
+                    label = f"{name} [dim]({t('menu_branch_current_marker')})[/dim]" if name == current_branch else name
+                    branch_choices.append({"name": label, "value": name})
+                selected_branch = _inquirer_select(
+                    t("menu_branch_select_existing_prompt"),
+                    choices=branch_choices + [{"name": t("menu_auto_back"), "value": "back"}],
+                    default=current_branch if current_branch else None,
+                    pointer="❯",
+                    qmark="🌿",
+                    amark="✓",
+                    cycle=True,
+                )
+                if selected_branch == "back":
+                    return None
+                branch = selected_branch
+
+    # Coleta as opções booleanas usando checkboxes
+    debug_default = (ctx.obj or {}).get("debug", False)
+    boolean_options = _inquirer_checkbox(
+        t("menu_prompt_boolean_options"),
+        choices=[
+            {"name": t("menu_prompt_dry_run"), "value": "dry_run"},
+            {"name": t("menu_prompt_no_push"), "value": "no_push"},
+            {"name": t("menu_prompt_nobuild"), "value": "nobuild"},
+            {"name": t("menu_prompt_debug"), "value": "debug"},
+            {"name": t("menu_prompt_yes"), "value": "yes"},
+        ],
+        default=["debug"] if debug_default else [],
+        qmark="⚙",
+    )
+
+    options = AutoOptions(
+        dry_run="dry_run" in boolean_options,
+        no_push="no_push" in boolean_options,
+        nobuild="nobuild" in boolean_options,
+        debug="debug" in boolean_options,
+        yes="yes" in boolean_options,
+        model=model,
+        message=message or None,
+        branch=branch or None,
+    )
+
+    if not ctx.obj:
+        ctx.obj = {}
+    ctx.obj["path"] = chosen_path or default_path
+    return options
+
+
+def _collect_reset_options_from_menu():
+    from launcher import ResetOptions
+
+    mode = _inquirer_select(
+        t("menu_reset_mode_prompt"),
+        choices=[
+            {"name": t("menu_reset_mode_summary"), "value": "summary"},
+            {"name": t("menu_reset_mode_dry_run"), "value": "dry_run"},
+            {"name": t("menu_reset_mode_full"), "value": "full"},
+            {"name": t("menu_action_back"), "value": "back"},
+        ],
+        default="summary",
+        pointer="❯",
+        qmark="⚙",
+        amark="✓",
+        cycle=True,
+    )
+
+    if mode == "back":
+        return None
+
+    quiet = _inquirer_confirm(
+        t("menu_reset_quiet_prompt"),
+        default=False,
+        qmark="⚙",
+    )
+    return ResetOptions(mode=mode, quiet=quiet)
+
+
+def _run_menu_mode(ctx: typer.Context) -> None:
+    from launcher import _is_interactive_terminal, _resolve_repo_path
+    from launcher_branch import _run_branch_center
+    from launcher_diagnostics import _run_check_ai_diagnostics, _show_gitpy_resources
+    from launcher_reset import _run_git_reset_resource
+    from launcher_auto import _run_auto_with_guards
+
+    if not _is_interactive_terminal():
+        Console().print(f"[yellow]{t('menu_requires_tty')}[/yellow]")
+        raise typer.Exit(1)
+
+    console = Console()
+    nav_stack = get_nav_stack()
+
+    # Inicializa pilha com Raiz se estiver vazia
+    if nav_stack.is_empty():
+        nav_stack.push("root", "menu_subtitle_main", t("breadcrumb_root"))
+
+    while True:
+        _render_menu_header(repo_status=_get_menu_repo_status(ctx))
+        action = _inquirer_select(
+            t("menu_main_prompt"),
+            choices=[
+                {"name": f"{t('menu_action_auto')}  [dim]{t('menu_action_auto_desc')}[/dim]", "value": "auto"},
+                {"name": f"{t('menu_action_branch')}  [dim]{t('menu_action_branch_desc')}[/dim]", "value": "branch"},
+                {"name": f"{t('menu_action_tag')}  [dim]{t('menu_action_tag_desc')}[/dim]", "value": "tag"},
+                {"name": f"{t('menu_action_check_ai')}  [dim]{t('menu_action_check_ai_desc')}[/dim]", "value": "check_ai"},
+                {"name": f"{t('menu_action_reset')}  [dim]{t('menu_action_reset_desc')}[/dim]", "value": "reset"},
+                {"name": f"{t('menu_action_resources')}  [dim]{t('menu_action_resources_desc')}[/dim]", "value": "resources"},
+                {"name": t("menu_action_exit"), "value": "exit"},
+            ],
+            default="auto",
+            pointer="❯",
+            qmark="✔",
+            amark="✓",
+            cycle=True,
+        )
+
+        if action == "exit":
+            nav_stack.clear()
+            console.print(f"[yellow]{t('menu_goodbye')}[/yellow]")
+            return
+
+        if action == "branch":
+            nav_stack.push("branch", "menu_subtitle_branch", t("menu_subtitle_branch"))
+            _run_branch_center(ctx)
+            nav_stack.pop()
+            continue
+
+        if action == "tag":
+            nav_stack.push("tag", "menu_subtitle_tag", t("menu_subtitle_tag"))
+            _run_tag_center(ctx)
+            nav_stack.pop()
+            continue
+
+        if action == "check_ai":
+            nav_stack.push("check_ai", "menu_subtitle_diag", t("menu_subtitle_diag"))
+            _render_menu_header("menu_subtitle_diag", repo_status=_get_menu_repo_status(ctx))
+            console.print(f"[cyan]{t('menu_running_check_ai')}[/cyan]")
+            _run_check_ai_diagnostics()
+            nav_stack.pop()
+            _pause_menu()
+            continue
+
+        if action == "reset":
+            nav_stack.push("reset", "menu_subtitle_reset", t("menu_subtitle_reset"))
+            _render_menu_header("menu_subtitle_reset", repo_status=_get_menu_repo_status(ctx))
+            user_completed = _run_git_reset_resource(ctx)
+            nav_stack.pop()
+            if user_completed:
+                _pause_menu()
+            continue
+
+        if action == "resources":
+            nav_stack.push("resources", "menu_subtitle_resources", t("menu_subtitle_resources"))
+            _render_menu_header("menu_subtitle_resources", repo_status=_get_menu_repo_status(ctx))
+            _show_gitpy_resources()
+            nav_stack.pop()
+            _pause_menu()
+            continue
+
+        # action == auto
+        nav_stack.push("auto", "menu_subtitle_auto", t("menu_subtitle_auto"))
+        _render_menu_header("menu_subtitle_auto", repo_status=_get_menu_repo_status(ctx))
+        options = _collect_auto_options_from_menu(ctx)
+        if options is None:
+            # Usuário escolheu voltar
+            nav_stack.pop()
+            continue
+        console.print(f"[cyan]{t('menu_running_auto')}[/cyan]")
+        _run_auto_with_guards(ctx, options, confirm_fn=_menu_confirm)
+        nav_stack.pop()
+        _pause_menu()
+
+
+def _get_menu_repo_status(ctx: typer.Context) -> Optional[str]:
+    """Retorna linha de status do repo atual para o header do menu."""
+    import subprocess
+    from launcher import _resolve_repo_path
+
+    repo_path = _resolve_repo_path(ctx)
+    try:
+        top_res = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if top_res.returncode != 0:
+            return None
+
+        top_level = top_res.stdout.strip()
+        if not top_level:
+            return None
+
+        repo_name = os.path.basename(top_level.rstrip("\\/")) or top_level
+        branch_res = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        branch = branch_res.stdout.strip() if branch_res.returncode == 0 else ""
+        if not branch:
+            head_res = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            branch = head_res.stdout.strip() if head_res.returncode == 0 else ""
+        if not branch:
+            branch = "HEAD"
+
+        return t("menu_repo_status", repo=repo_name, branch=branch)
+    except Exception:
+        return None
+
+
+def _run_tag_center(ctx: typer.Context) -> None:
+    """Central de gerenciamento de tags."""
+    from launcher import _resolve_repo_path
+    from launcher_shared import run_async
+    from vibe_core import kernel
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.text import Text
+
+    console = Console()
+    repo_path = _resolve_repo_path(ctx)
+
+    while True:
+        _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+        action = _inquirer_select(
+            t("menu_tag_prompt"),
+            choices=[
+                {"name": t("menu_tag_action_list"), "value": "list"},
+                {"name": t("menu_tag_action_create"), "value": "create"},
+                {"name": t("menu_tag_action_delete"), "value": "delete"},
+                {"name": t("menu_tag_action_reset"), "value": "reset"},
+                {"name": t("menu_action_back"), "value": "back"},
+            ],
+            default="list",
+            pointer="❯",
+            qmark="🏷️",
+            amark="✓",
+            cycle=True,
+        )
+
+        if action == "back":
+            return
+
+        if action == "list":
+            _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+            console.print(f"[cyan]{t('menu_tag_list_title')}[/cyan]")
+            
+            result = run_async(kernel.run("core/git-tag", {"action": "list", "repo_path": repo_path}))
+            if result.get("success"):
+                local_tags = result.get("local_tags", [])
+                remote_tags = result.get("remote_tags", [])
+                
+                console.print(f"\n[bold]{t('menu_tag_list_local_title')}:[/bold]")
+                if local_tags:
+                    for tag in local_tags:
+                        console.print(f"  🏷️  {tag}")
+                else:
+                    console.print(f"  [dim]{t('menu_tag_list_empty')}[/dim]")
+                
+                console.print(f"\n[bold]{t('menu_tag_list_remote_title')}:[/bold]")
+                if remote_tags:
+                    for tag in remote_tags:
+                        console.print(f"  🌐 {tag}")
+                else:
+                    console.print(f"  [dim]{t('menu_tag_list_empty')}[/dim]")
+            else:
+                console.print(f"[red]{t('menu_tag_generic_error')}: {result.get('message', 'Unknown error')}[/red]")
+            
+            _pause_menu()
+            continue
+
+        if action == "create":
+            _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+            tag_name = _inquirer_text(t("menu_tag_name_prompt")).strip()
+            if not tag_name or tag_name.lower() == "back":
+                continue
+            
+            # Validar nome da tag
+            validation = run_async(kernel.run("core/git-tag", {"action": "validate", "tag_name": tag_name, "repo_path": repo_path}))
+            if not validation.get("valid"):
+                console.print(f"[red]{t('menu_tag_invalid_name').format(error=validation.get('error', 'Unknown'))}[/red]")
+                _pause_menu()
+                continue
+            
+            # Verificar se tag já existe
+            exists = run_async(kernel.run("core/git-tag", {"action": "exists", "tag_name": tag_name, "repo_path": repo_path}))
+            if exists.get("exists"):
+                console.print(f"[red]{t('menu_tag_exists').format(tag=tag_name)}[/red]")
+                _pause_menu()
+                continue
+            
+            # Escolher tipo de tag
+            tag_type = _inquirer_select(
+                t("menu_tag_create_type_prompt"),
+                choices=[
+                    {"name": t("menu_tag_create_light"), "value": "light"},
+                    {"name": t("menu_tag_create_annotated"), "value": "annotated"},
+                    {"name": t("menu_action_back"), "value": "back"},
+                ],
+                default="light",
+                pointer="❯",
+                qmark="🏷️",
+                amark="✓",
+                cycle=True,
+            )
+            
+            if tag_type == "back":
+                continue
+            
+            message = ""
+            if tag_type == "annotated":
+                message = _inquirer_text(t("menu_tag_message_prompt")).strip()
+                if message.lower() == "back":
+                    continue
+            
+            # Criar tag
+            payload = {"action": "create", "tag_name": tag_name, "repo_path": repo_path}
+            if message:
+                payload["message"] = message
+            
+            result = run_async(kernel.run("core/git-tag", payload))
+            if result.get("success"):
+                console.print(f"[green]{t('menu_tag_created').format(tag=tag_name)}[/green]")
+            else:
+                console.print(f"[red]{t('menu_tag_generic_error')}: {result.get('message', 'Unknown error')}[/red]")
+            
+            _pause_menu()
+            continue
+
+        if action == "delete":
+            _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+            
+            # Listar tags disponíveis
+            result = run_async(kernel.run("core/git-tag", {"action": "list", "repo_path": repo_path}))
+            if not result.get("success") or not result.get("local_tags"):
+                console.print(f"[yellow]{t('menu_tag_list_empty')}[/yellow]")
+                _pause_menu()
+                continue
+            
+            local_tags = result.get("local_tags", [])
+            tag_choices = [{"name": tag, "value": tag} for tag in local_tags]
+            tag_choices.append({"name": t("menu_action_back"), "value": "back"})
+            
+            selected_tag = _inquirer_select(
+                t("menu_tag_select_existing_prompt"),
+                choices=tag_choices,
+                default=local_tags[0] if local_tags else None,
+                pointer="❯",
+                qmark="🗑️",
+                amark="✓",
+                cycle=True,
+            )
+            
+            if selected_tag == "back":
+                continue
+            
+            # Primeira chamada para obter código de confirmação
+            delete_result = run_async(kernel.run("core/git-tag", {"action": "delete", "tag_name": selected_tag, "repo_path": repo_path}))
+            if delete_result.get("error") == "CONFIRMATION_REQUIRED":
+                confirmation_code = delete_result.get("confirmation_code")
+                
+                # Mostrar aviso e solicitar confirmação
+                console.print(f"\n[red bold]{t('menu_tag_delete_warning')}[/red bold]")
+                console.print(f"[yellow]{t('menu_tag_delete_confirm').format(code=confirmation_code)}[/yellow]")
+                
+                user_code = _inquirer_text(t("menu_tag_delete_code_prompt")).strip()
+                if user_code.lower() == "back":
+                    continue
+                
+                # Segunda chamada com confirmação
+                delete_result = run_async(kernel.run("core/git-tag", {
+                    "action": "delete", 
+                    "tag_name": selected_tag, 
+                    "repo_path": repo_path,
+                    "confirmation_code": user_code,
+                    "expected_code": confirmation_code
+                }))
+            
+            if delete_result.get("success"):
+                console.print(f"[green]{t('menu_tag_deleted').format(tag=selected_tag)}[/green]")
+            else:
+                error_msg = delete_result.get('message', 'Unknown error')
+                if delete_result.get("error") == "INVALID_CONFIRMATION":
+                    console.print(f"[red]{t('menu_tag_confirmation_invalid')}[/red]")
+                else:
+                    console.print(f"[red]{t('menu_tag_generic_error')}: {error_msg}[/red]")
+            
+            _pause_menu()
+            continue
+
+        if action == "reset":
+            _render_menu_header("menu_subtitle_tag", repo_status=_get_menu_repo_status(ctx))
+            
+            # Listar tags disponíveis
+            result = run_async(kernel.run("core/git-tag", {"action": "list", "repo_path": repo_path}))
+            if not result.get("success") or not result.get("local_tags"):
+                console.print(f"[yellow]{t('menu_tag_list_empty')}[/yellow]")
+                _pause_menu()
+                continue
+            
+            local_tags = result.get("local_tags", [])
+            tag_choices = [{"name": tag, "value": tag} for tag in local_tags]
+            tag_choices.append({"name": t("menu_action_back"), "value": "back"})
+            
+            selected_tag = _inquirer_select(
+                t("menu_tag_select_existing_prompt"),
+                choices=tag_choices,
+                default=local_tags[0] if local_tags else None,
+                pointer="❯",
+                qmark="🔄",
+                amark="✓",
+                cycle=True,
+            )
+            
+            if selected_tag == "back":
+                continue
+            
+            # Primeira chamada para obter código de confirmação
+            reset_result = run_async(kernel.run("core/git-tag", {"action": "reset", "tag_name": selected_tag, "repo_path": repo_path}))
+            if reset_result.get("error") == "CONFIRMATION_REQUIRED":
+                confirmation_code = reset_result.get("confirmation_code")
+                
+                # Mostrar aviso e solicitar confirmação
+                console.print(f"\n[red bold]{t('menu_tag_reset_warning').format(tag=selected_tag)}[/red bold]")
+                console.print(f"[yellow]{t('menu_tag_reset_confirm').format(code=confirmation_code)}[/yellow]")
+                
+                user_code = _inquirer_text(t("menu_tag_reset_code_prompt")).strip()
+                if user_code.lower() == "back":
+                    continue
+                
+                # Segunda chamada com confirmação
+                reset_result = run_async(kernel.run("core/git-tag", {
+                    "action": "reset", 
+                    "tag_name": selected_tag, 
+                    "repo_path": repo_path,
+                    "confirmation_code": user_code,
+                    "expected_code": confirmation_code
+                }))
+            
+            if reset_result.get("success"):
+                console.print(f"[green]{t('menu_tag_reset_success').format(tag=selected_tag)}[/green]")
+            else:
+                error_msg = reset_result.get('message', 'Unknown error')
+                if reset_result.get("error") == "INVALID_CONFIRMATION":
+                    console.print(f"[red]{t('menu_tag_confirmation_invalid')}[/red]")
+                else:
+                    console.print(f"[red]{t('menu_tag_generic_error')}: {error_msg}[/red]")
+            
+            _pause_menu()
+            continue
