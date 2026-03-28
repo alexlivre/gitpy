@@ -1,4 +1,19 @@
-# GitPy: The DevOps Co-Pilot for Your Repositories ☁️🤖
+# ⚠️ PROJECT DEPRECATED - MOVED TO COGIT CLI
+
+**This project (GitPy) has been discontinued and superseded by [Cogit CLI](https://github.com/alexlivre/cogit)**
+
+Cogit CLI is a complete rewrite in TypeScript/Node.js with:
+- ✅ **Clean Architecture** - Proper layered design
+- ✅ **95.4% Test Coverage** - 305 tests passing  
+- ✅ **Better Performance** - Native Node.js execution
+- ✅ **Enhanced Features** - Auto Push, Ollama Thinking Mode, and more
+- ✅ **Active Development** - Regular updates and improvements
+
+**👉 Migrate now:** [https://github.com/alexlivre/cogit](https://github.com/alexlivre/cogit)
+
+---
+
+# GitPy: The DevOps Co-Pilot for Your Repositories ☁️🤖 (DEPRECATED)
 
 > **"It doesn't just version. It Understands, Protects, Automates, and Heals."**
 
@@ -23,6 +38,63 @@ python launcher.py auto --yes
 ```
 
 > **One Command Everything**: GitPy automatically scans, analyzes, commits, and pushes your changes with semantic commit messages.
+
+---
+
+## 🚨 Migration Guide: GitPy → Cogit CLI
+
+### Why Migrate?
+
+| Feature | GitPy (Python) | Cogit CLI (TypeScript) |
+|---------|----------------|------------------------|
+| **Architecture** | Vibe Architecture (Cartridges) | Clean Architecture (Layers) |
+| **Language** | Python 3.8+ | TypeScript 5.x / Node.js 18+ |
+| **Test Coverage** | Basic testing | 95.4% coverage (305 tests) |
+| **Performance** | Python interpreter overhead | Native Node.js execution |
+| **Package Management** | pip + requirements.txt | npm + package.json |
+| **Type Safety** | Runtime errors only | Compile-time type checking |
+| **Development** | Dynamic typing | Strong typing + IDE support |
+
+### New Features in Cogit CLI
+
+- **🔄 Auto Push (PHASE 6)**: Intelligent automatic push with retry system
+- **🧠 Ollama Thinking Mode**: Visualize AI reasoning process
+- **🏗️ Clean Architecture**: Proper separation of concerns
+- **✅ Enhanced Testing**: Comprehensive test suite
+- **⚡ Better Performance**: Optimized Node.js execution
+- **🔧 Modern Tooling**: TypeScript, ESLint, Prettier integration
+
+### Quick Migration Steps
+
+1. **Install Cogit CLI**:
+   ```bash
+   git clone https://github.com/alexlivre/cogit.git
+   cd cogit
+   npm install
+   npm run build
+   npm link
+   ```
+
+2. **Copy Configuration**:
+   ```bash
+   # Your existing .env file will work with minimal changes
+   cp /path/to/gitpy/.env ./cogit/.env
+   ```
+
+3. **Verify Migration**:
+   ```bash
+   cogit check-ai  # Test AI connectivity
+   cogit auto --dry-run  # Test workflow
+   ```
+
+### Breaking Changes
+
+- Python → TypeScript/Node.js environment
+- Cartridge system → Clean Architecture layers
+- Configuration format slightly updated
+- Command structure: `python launcher.py` → `cogit`
+
+**💡 Tip**: All your existing AI provider API keys and configurations are compatible!
 
 ---
 
